@@ -1,0 +1,1360 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>SalarySe — Make a Wish</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,700;1,9..144,900&family=Playfair+Display:ital,wght@0,500;0,700;0,800;0,900;1,500;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preload" as="image" href="banner.webp" type="image/webp" fetchpriority="high" />
+    <link rel="preload" as="image" href="banner.jpg" type="image/jpeg" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Noto Sans", "system-ui", "sans-serif"],
+              serif: ["Fraunces", "Georgia", "serif"],
+              display: ["Playfair Display", "Georgia", "serif"],
+            },
+            colors: {
+              brand: {
+                DEFAULT: "#7849C9", // royal purple, lighter for dark contrast
+                deep: "#5B2EAA",
+                darker: "#2C0F5C",
+                soft: "rgba(120,73,201,0.16)",
+                glow: "#9B6FE3",
+              },
+              hl: {
+                DEFAULT: "#F4CC60",
+                deep: "#C9A24E",
+                soft: "rgba(244,204,96,0.14)",
+                bright: "#FBE38C",
+              },
+              // Dark surfaces — deep purple-black
+              bg: "#0A0421", // app canvas
+              surface: "#160A33", // default card
+              elev: "#241452", // elevated card
+              line: "#2E1F5C", // borders/dividers
+              wash: "#0F0526", // input wash on dark
+              // Text
+              ink: { DEFAULT: "#F4F0FB", soft: "#CDC4E6", mute: "#8B7DAC", dim: "#5C4D7C" },
+            },
+            boxShadow: {
+              card: "0 1px 0 rgba(0,0,0,0.4), 0 12px 32px rgba(0,0,0,0.4)",
+              cta: "0 12px 32px rgba(120,73,201,0.40), inset 0 1px 0 rgba(255,255,255,0.12)",
+              gold: "0 8px 28px rgba(244,204,96,0.40)",
+              ring: "0 0 0 1px rgba(244,204,96,0.4), 0 0 24px rgba(244,204,96,0.18)",
+            },
+            keyframes: {
+              shimmer: {
+                "0%": { backgroundPosition: "-400px 0" },
+                "100%": { backgroundPosition: "400px 0" },
+              },
+              float: {
+                "0%,100%": { transform: "translateY(0)" },
+                "50%": { transform: "translateY(-6px)" },
+              },
+              pop: {
+                "0%": { transform: "scale(0.9)", opacity: 0 },
+                "60%": { transform: "scale(1.04)", opacity: 1 },
+                "100%": { transform: "scale(1)", opacity: 1 },
+              },
+              slide: {
+                "0%": { transform: "translateY(8px)", opacity: 0 },
+                "100%": { transform: "translateY(0)", opacity: 1 },
+              },
+              confetti: {
+                "0%": { transform: "translateY(-20px) rotate(0)", opacity: 1 },
+                "100%": { transform: "translateY(420px) rotate(540deg)", opacity: 0 },
+              },
+              twinkle: {
+                "0%,100%": { opacity: 0.3, transform: "scale(0.85)" },
+                "50%": { opacity: 1, transform: "scale(1.1)" },
+              },
+            },
+            animation: {
+              shimmer: "shimmer 2.4s linear infinite",
+              float: "float 3.6s ease-in-out infinite",
+              pop: "pop 420ms cubic-bezier(.2,.9,.3,1.2) both",
+              slide: "slide 320ms cubic-bezier(.2,.7,.2,1) both",
+              twinkle: "twinkle 2.4s ease-in-out infinite",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      :root { color-scheme: dark; }
+      html, body {
+        background: #050214;
+        font-family: "Noto Sans", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        color: #F4F0FB;
+      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* Full-bleed canvas — no phone frame, no notch */
+      .phone {
+        width: min(100vw, 460px);
+        min-height: 100dvh;
+        background: #0A0421;
+        overflow-x: hidden;
+        position: relative;
+      }
+      @media (max-width: 480px) {
+        .phone { width: 100vw; }
+      }
+
+      .fill {
+        background: linear-gradient(90deg, #5B2EAA 0%, #9B6FE3 55%, #F4CC60 100%);
+      }
+
+      /* Hero/wish royal-purple banner with sunburst rays */
+      .hero-emerald {
+        background:
+          radial-gradient(120% 70% at 0% 0%, rgba(255,255,255,0.08), transparent 60%),
+          radial-gradient(closest-side at 100% 50%, rgba(244,204,96,0.18), transparent 70%),
+          radial-gradient(closest-side at 100% 80%, rgba(217,140,200,0.20), transparent 70%),
+          repeating-conic-gradient(from 0deg at 8% 100%,
+            rgba(255,255,255,0.06) 0deg 4deg,
+            transparent 4deg 12deg),
+          linear-gradient(135deg, #5B2EAA 0%, #3D1A78 60%, #2C0F5C 100%);
+      }
+
+      .gold-text {
+        background: linear-gradient(180deg, #FBE38C 0%, #F4CC60 45%, #C9A24E 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+        text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+      }
+
+      .wish-italic {
+        font-family: "Fraunces", Georgia, serif;
+        font-style: italic; font-weight: 900; letter-spacing: -0.01em;
+      }
+
+      .display-italic {
+        font-family: "Playfair Display", Georgia, serif;
+        font-style: italic; font-weight: 800; letter-spacing: -0.005em;
+      }
+      .display {
+        font-family: "Playfair Display", Georgia, serif;
+        font-weight: 800; letter-spacing: -0.005em;
+      }
+
+      /* Focus-visible rings for tab nav */
+      button:focus-visible, [role="button"]:focus-visible, input:focus-visible {
+        outline: 2px solid #F4CC60;
+        outline-offset: 2px;
+      }
+      .card-surface:focus-visible {
+        outline: 2px solid #F4CC60;
+        outline-offset: 3px;
+      }
+
+      .ink-underline {
+        background-image: linear-gradient(transparent 62%, rgba(244,204,96,0.95) 62%);
+        background-repeat: no-repeat; background-size: 100% 100%; padding: 0 2px;
+      }
+
+      .brand-glow::before {
+        content: ""; position: absolute; inset: -20% -20% auto auto;
+        width: 280px; height: 280px;
+        background: radial-gradient(closest-side, rgba(244,204,96,0.28), transparent 72%);
+        pointer-events: none; filter: blur(2px);
+      }
+
+      .sticker {
+        background: #2C0F5C; color: #F4CC60; border-radius: 999px;
+        padding: 4px 10px; font-weight: 800; letter-spacing: 0.06em;
+        font-size: 10px; text-transform: uppercase;
+      }
+
+      .sparkle-deco { position: absolute; pointer-events: none; }
+
+      .chip-shimmer {
+        background-image: linear-gradient(90deg,
+          rgba(255,255,255,0) 0%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0) 100%);
+        background-size: 400px 100%;
+      }
+
+      .confetti-piece {
+        position: absolute; top: -20px; width: 10px; height: 14px; border-radius: 2px;
+        animation: confetti 1600ms ease-in forwards;
+      }
+
+      .dock {
+        background: rgba(10,4,33,0.86);
+        backdrop-filter: saturate(180%) blur(18px);
+        -webkit-backdrop-filter: saturate(180%) blur(18px);
+        border-top: 1px solid #2E1F5C;
+      }
+
+      /* Surface card with subtle inner highlight */
+      .card-surface {
+        background: linear-gradient(180deg, #1A0F38 0%, #0F0526 100%);
+        border: 1px solid #2E1F5C;
+      }
+
+      .input-dark {
+        background: #0F0526;
+        border: 1px solid #2E1F5C;
+      }
+      .input-dark:focus-within { border-color: #7849C9; }
+    </style>
+  </head>
+  <body class="min-h-dvh w-full">
+    <div id="root" class="min-h-dvh w-full"></div>
+
+    <script type="text/babel" data-presets="env,react">
+      const { useState, useMemo, useEffect } = React;
+
+      /* ---------- DATA ---------- */
+      // Each product = ONE task. Tapping it redirects to that product's
+      // existing in-app flow (which we do NOT build here).
+      const PRODUCTS = [
+        {
+          id: "card",
+          name: "Apply for Card",
+          short: "Credit Card",
+          tagline: "Apply for the SalarySe Card",
+          chance: "high",
+          chanceLabel: "Higher chance",
+          icon: "card",
+          journeyTitle: "Card application",
+          // Card has all states including in-progress
+          supportsInProgress: true,
+        },
+        {
+          id: "upscore",
+          name: "Build UPscore",
+          short: "UPscore",
+          tagline: "Track your money habits",
+          chance: "mid",
+          chanceLabel: "Mid chance",
+          icon: "spark",
+          journeyTitle: "UPscore set-up",
+          // PFM/UPscore has NO in-progress state — binary success/failed
+          supportsInProgress: false,
+        },
+        {
+          id: "refer",
+          name: "Refer a friend",
+          short: "Refer & Earn",
+          tagline: "Invite a friend to SalarySe",
+          chance: "mid",
+          chanceLabel: "Mid chance",
+          icon: "gift",
+          journeyTitle: "Refer & Earn",
+          // Refer has in-progress (waiting for friend to join)
+          supportsInProgress: true,
+        },
+      ];
+
+      // State semantics:
+      //   idle        — not started
+      //   in-progress — Card / Refer only (waiting on next event)
+      //   success     — wish-eligible
+      //   failed      — retry possible
+      const STATE_META = {
+        "in-progress": {
+          label: "In progress",
+          icon: "flame",
+          fg: "#F4C674",
+          bg: "rgba(244,198,116,0.12)",
+          border: "rgba(244,198,116,0.4)",
+        },
+        success: {
+          label: "Granted",
+          icon: "check",
+          fg: "#7CE3A8",
+          bg: "rgba(124,227,168,0.12)",
+          border: "rgba(124,227,168,0.4)",
+        },
+        failed: {
+          label: "Failed — retry",
+          icon: "back",
+          fg: "#F49191",
+          bg: "rgba(244,145,145,0.1)",
+          border: "rgba(244,145,145,0.4)",
+        },
+      };
+
+      const WISH_PRESETS = ["A new iPhone", "Solo trip to Goa", "MacBook Air", "Save ₹50,000"];
+
+      /* ---------- ICONS ---------- */
+      const Icon = ({ name, className = "w-6 h-6", stroke = "currentColor", style }) => {
+        const props = {
+          className, style, viewBox: "0 0 24 24", fill: "none", stroke,
+          strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round",
+        };
+        switch (name) {
+          case "card":
+            return (
+              <svg {...props}>
+                <rect x="2.5" y="5.5" width="19" height="13" rx="3" />
+                <path d="M2.5 10h19" />
+                <path d="M6 15h4" />
+              </svg>
+            );
+          case "spark":
+            return (
+              <svg {...props}>
+                <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
+                <path d="M6.4 6.4l2.8 2.8M14.8 14.8l2.8 2.8M6.4 17.6l2.8-2.8M14.8 9.2l2.8-2.8" />
+              </svg>
+            );
+          case "gift":
+            return (
+              <svg {...props}>
+                <rect x="3" y="9" width="18" height="11" rx="2" />
+                <path d="M3 13h18M12 9v11" />
+                <path d="M8 9c0-2 1.5-3 3-3 1.5 0 1.5 3 1.5 3M16 9c0-2-1.5-3-3-3-1.5 0-1.5 3-1.5 3" />
+              </svg>
+            );
+          case "back": return <svg {...props}><path d="M15 6l-6 6 6 6" /></svg>;
+          case "check": return <svg {...props}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
+          case "lock":
+            return (
+              <svg {...props}>
+                <rect x="5" y="11" width="14" height="9" rx="2" />
+                <path d="M8 11V8a4 4 0 118 0v3" />
+              </svg>
+            );
+          case "edit":
+            return (
+              <svg {...props}>
+                <path d="M4 20h4l10-10-4-4L4 16v4z" />
+                <path d="M14 6l4 4" />
+              </svg>
+            );
+          case "arrow": return <svg {...props}><path d="M5 12h14M13 6l6 6-6 6" /></svg>;
+          case "home":
+            return (
+              <svg {...props}>
+                <path d="M4 11l8-7 8 7v9a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1v-9z" />
+              </svg>
+            );
+          case "wish":
+            return (
+              <svg {...props}>
+                <path d="M12 21s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 11c0 5.5-7 10-7 10z" />
+              </svg>
+            );
+          case "user":
+            return (
+              <svg {...props}>
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+              </svg>
+            );
+          case "sparkle":
+            return (
+              <svg {...props}>
+                <path d="M12 2l1.6 4.4L18 8l-4.4 1.6L12 14l-1.6-4.4L6 8l4.4-1.6L12 2zM18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14z" />
+              </svg>
+            );
+          case "star4":
+            return (
+              <svg {...props}>
+                <path d="M12 2c0 5 1 9 10 10-9 1-10 5-10 10 0-5-1-9-10-10 9-1 10-5 10-10z" fill={stroke} stroke="none" />
+              </svg>
+            );
+          case "flame":
+            return (
+              <svg {...props}>
+                <path d="M12 3s4 4 4 8a4 4 0 11-8 0c0-2 1-3 1-3s-1 1.5 1 3c2 1 2-3 0-5 0-2 2-3 2-3z" />
+              </svg>
+            );
+          case "trend":
+            return (
+              <svg {...props}>
+                <path d="M3 17l6-6 4 4 8-8" />
+                <path d="M14 7h7v7" />
+              </svg>
+            );
+          case "lamp":
+            return (
+              <svg viewBox="0 0 96 72" className={className} fill="none">
+                <defs>
+                  <linearGradient id="lampG" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#FBE38C" />
+                    <stop offset=".45" stopColor="#F4CC60" />
+                    <stop offset="1" stopColor="#A87925" />
+                  </linearGradient>
+                  <linearGradient id="lampShade" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stopColor="#A87925" stopOpacity="0.9" />
+                    <stop offset=".5" stopColor="#F4CC60" />
+                    <stop offset="1" stopColor="#A87925" stopOpacity="0.9" />
+                  </linearGradient>
+                  <radialGradient id="lampHi" cx=".4" cy=".35" r=".6">
+                    <stop offset="0" stopColor="#FFF6D4" stopOpacity="0.7" />
+                    <stop offset="1" stopColor="#FFF6D4" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+                {/* base/rock under lamp */}
+                <ellipse cx="48" cy="66" rx="38" ry="4" fill="#1F0F44" />
+                {/* lamp body */}
+                <path
+                  d="M16 50 C16 38 28 30 48 30 C66 30 84 36 84 48 C84 58 70 64 48 64 C26 64 16 58 16 50 Z"
+                  fill="url(#lampG)"
+                />
+                {/* belly highlight */}
+                <ellipse cx="36" cy="42" rx="18" ry="6" fill="url(#lampHi)" />
+                {/* decorative band */}
+                <path
+                  d="M16 48 C28 52 68 52 84 48"
+                  stroke="#7C4A0E"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  fill="none"
+                  opacity="0.6"
+                />
+                {/* spout (right side, pointing up-right) */}
+                <path
+                  d="M76 36 C 92 30 96 18 92 8"
+                  stroke="url(#lampShade)"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                {/* spout tip */}
+                <circle cx="92" cy="8" r="3" fill="#FBE38C" />
+                {/* handle (left side) */}
+                <path
+                  d="M16 44 C 4 42 4 32 12 28 C 16 26 20 28 20 32"
+                  stroke="url(#lampShade)"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                {/* lid dome */}
+                <path d="M40 30 C 42 22 54 22 56 30 Z" fill="url(#lampG)" />
+                {/* finial */}
+                <circle cx="48" cy="20" r="3" fill="#FBE38C" />
+                <rect x="46" y="14" width="4" height="6" rx="1.5" fill="#F4CC60" />
+              </svg>
+            );
+          default: return null;
+        }
+      };
+
+      /* ---------- HELPERS ---------- */
+      const cls = (...a) => a.filter(Boolean).join(" ");
+
+      function WishLockup({ size = "md", color = "light" }) {
+        const isLight = color === "light";
+        const sizes = {
+          sm: { make: "text-[11px]", wish: "text-[28px]" },
+          md: { make: "text-[13px]", wish: "text-[40px]" },
+          lg: { make: "text-[15px]", wish: "text-[64px]" },
+        }[size];
+        return (
+          <div className="inline-flex flex-col leading-none">
+            <span
+              className={cls(sizes.make, "italic font-medium tracking-wide",
+                isLight ? "text-white/85" : "text-ink-soft")}
+              style={{ fontFamily: "Fraunces, serif" }}
+            >make a</span>
+            <span className={cls("wish-italic gold-text mt-0.5", sizes.wish)}>WISH</span>
+          </div>
+        );
+      }
+
+      function StateBadge({ state, className = "" }) {
+        if (!state || state === "idle") return null;
+        const m = STATE_META[state];
+        if (!m) return null;
+        return (
+          <span
+            className={cls(
+              "inline-flex items-center gap-1 rounded-full font-extrabold text-[10px] uppercase tracking-[0.08em] px-2 py-1 border",
+              className
+            )}
+            style={{ background: m.bg, color: m.fg, borderColor: m.border }}
+          >
+            <span
+              className={cls("h-1.5 w-1.5 rounded-full", state === "in-progress" && "animate-pulse")}
+              style={{ background: m.fg }}
+            />
+            {m.label}
+          </span>
+        );
+      }
+
+      function ChanceChip({ level, label, className = "" }) {
+        const isHigh = level === "high";
+        return (
+          <span
+            className={cls(
+              "inline-flex items-center gap-1 rounded-full font-extrabold text-[10px] uppercase tracking-[0.08em] px-2 py-1",
+              isHigh
+                ? "bg-hl text-brand-darker shadow-gold"
+                : "bg-hl-soft text-hl border border-hl/30",
+              className
+            )}
+          >
+            <Icon
+              name={isHigh ? "flame" : "trend"}
+              className="w-3 h-3"
+              stroke={isHigh ? "#2C0F5C" : "#F4CC60"}
+            />
+            {label}
+          </span>
+        );
+      }
+
+      function Confetti({ run }) {
+        if (!run) return null;
+        const pieces = Array.from({ length: 28 });
+        const colors = ["#F4CC60", "#FBE38C", "#9B6FE3", "#C9A24E", "#7849C9"];
+        return (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden z-40">
+            {pieces.map((_, i) => (
+              <span key={i} className="confetti-piece"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  background: colors[i % colors.length],
+                  animationDelay: `${Math.random() * 600}ms`,
+                  animationDuration: `${1200 + Math.random() * 1200}ms`,
+                  transform: `rotate(${Math.random() * 360}deg)`,
+                }} />
+            ))}
+          </div>
+        );
+      }
+
+      /* ---------- CHROME ---------- */
+      function StatusBar() {
+        return (
+          <div className="relative h-12 flex items-end justify-between px-7 pb-1.5 text-[13px] font-semibold text-ink select-none">
+            <span>9:41</span>
+            <span className="flex items-center gap-1.5">
+              <svg width="16" height="11" viewBox="0 0 16 11" fill="none">
+                <path d="M1 6.5L3 8.5M3 4.5L5.5 7M5 2.5L8 5.5M7 .5L11 4.5"
+                  stroke="#F4F0FB" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+              <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+                <path d="M1 5.5C3 3 5 1.5 7 1.5s4 1.5 6 4"
+                  stroke="#F4F0FB" strokeWidth="1.4" strokeLinecap="round" />
+                <circle cx="7" cy="8" r="1" fill="#F4F0FB" />
+              </svg>
+              <span className="inline-flex items-center">
+                <span className="w-6 h-3 border border-ink rounded-[3px] relative mr-0.5">
+                  <span className="absolute inset-0.5 bg-ink rounded-[1px]" style={{ width: "78%" }} />
+                </span>
+                <span className="w-0.5 h-1.5 bg-ink rounded-r-sm" />
+              </span>
+            </span>
+          </div>
+        );
+      }
+
+      function TopBar({ title, onBack, right }) {
+        return (
+          <div className="relative h-14 px-4 flex items-center justify-between">
+            <button onClick={onBack}
+              className={cls("h-10 w-10 rounded-full grid place-items-center -ml-2",
+                onBack ? "hover:bg-elev" : "opacity-0 pointer-events-none")}
+              aria-label="Back">
+              <Icon name="back" className="w-5 h-5 text-ink" />
+            </button>
+            <div className="text-[15px] font-semibold text-ink">{title}</div>
+            <div className="w-10 flex justify-end">{right || null}</div>
+          </div>
+        );
+      }
+
+      function Dock({ active = "wish" }) {
+        const items = [
+          { id: "home", label: "Home", icon: "home" },
+          { id: "wish", label: "Wishes", icon: "wish" },
+          { id: "me", label: "Me", icon: "user" },
+        ];
+        return (
+          <div className="dock absolute bottom-0 inset-x-0 h-[78px] flex items-center justify-around px-6 z-30 pb-[env(safe-area-inset-bottom)]">
+            {items.map((it) => {
+              const on = it.id === active;
+              return (
+                <button key={it.id} className="flex flex-col items-center gap-1">
+                  <Icon name={it.icon} className={cls("w-6 h-6", on ? "text-hl" : "text-ink-mute")}
+                    stroke={on ? "#F4CC60" : "#8B7DAC"} />
+                  <span className={cls("text-[11px] font-semibold tracking-wide",
+                    on ? "text-hl" : "text-ink-mute")}>{it.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        );
+      }
+
+      /* ---------- WISH ENTRY (Screen 1) ---------- */
+      function WishEntryScreen({ onConfirm, totalUnlocked, wishHistory = [] }) {
+        const [draft, setDraft] = useState("");
+        const [historyOpen, setHistoryOpen] = useState(false);
+        const valid = draft.trim().length > 1;
+
+        return (
+          <div className="relative min-h-dvh flex flex-col bg-bg animate-slide">
+            <TopBar
+              title=""
+              right={
+                totalUnlocked > 0 ? (
+                  <button
+                    onClick={() => setHistoryOpen(true)}
+                    className="inline-flex items-center gap-1.5 bg-hl text-brand-darker rounded-full pl-2 pr-2.5 py-1 shadow-gold active:translate-y-0.5 transition"
+                  >
+                    <Icon name="sparkle" className="w-3 h-3" stroke="#2C0F5C" />
+                    <span className="text-[10px] font-extrabold tracking-[0.08em] uppercase">
+                      {totalUnlocked} accepted
+                    </span>
+                    <Icon name="arrow" className="w-3 h-3" stroke="#2C0F5C" />
+                  </button>
+                ) : null
+              }
+            />
+
+            <div className="flex-1 px-5 pb-10 no-scrollbar">
+              {/* Hero — Make a Wish campaign banner (uses provided artwork) */}
+              <div
+                className="relative mb-6 rounded-3xl overflow-hidden border border-hl/15 shadow-card"
+                style={{ aspectRatio: "686 / 174", background: "linear-gradient(135deg, #5B2EAA 0%, #2C0F5C 100%)" }}
+              >
+                <picture>
+                  <source srcSet="banner.webp" type="image/webp" />
+                  <source srcSet="banner.jpg" type="image/jpeg" />
+                  <img
+                    src="banner.jpg"
+                    alt="Make a Wish — Cognizant employees, share a wish aligned with your financial goals and win"
+                    width={686}
+                    height={174}
+                    decoding="async"
+                    fetchpriority="high"
+                    className="absolute inset-0 w-full h-full object-cover select-none"
+                    draggable="false"
+                  />
+                </picture>
+              </div>
+
+              {/* Campaign meta strip */}
+              <div className="grid grid-cols-3 gap-2 mb-7">
+                {[
+                  { k: "1 task", v: "to win" },
+                  { k: "30 sec", v: "to enter" },
+                  { k: "Weekly", v: "draws" },
+                ].map((s) => (
+                  <div key={s.v} className="rounded-2xl card-surface p-3">
+                    <div className="text-[14px] font-extrabold text-hl">{s.k}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-ink-mute font-semibold">{s.v}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Wish input */}
+              <div className="mb-2 flex items-center gap-2">
+                <Icon name="sparkle" className="w-4 h-4" stroke="#F4CC60" />
+                <span className="text-[11px] uppercase tracking-[0.18em] font-bold text-hl">What's your wish?</span>
+              </div>
+              <h2 className="text-[26px] font-black tracking-tight text-ink leading-[1.1] mb-4">
+                Tell us what you'd love to{" "}
+                <span className="wish-italic text-hl">win</span>.
+              </h2>
+
+              <div className="rounded-3xl input-dark p-2 transition">
+                <input
+                  type="text"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value.slice(0, 30))}
+                  maxLength={30}
+                  placeholder="I wish for…"
+                  className="w-full bg-transparent px-3 py-3 text-[18px] font-bold text-ink placeholder:text-ink-mute focus:outline-none"
+                />
+                <div className="flex items-center justify-between px-2 pb-1 pt-1">
+                  <span className={cls("text-[11px] font-semibold", draft.length >= 28 ? "text-hl" : "text-ink-mute")}>{draft.length}/30</span>
+                  <span className="text-[11px] text-ink-mute italic" style={{ fontFamily: "Fraunces, serif" }}>
+                    keep it short
+                  </span>
+                </div>
+              </div>
+
+              {/* Preset chips */}
+              <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+                {WISH_PRESETS.map((t) => (
+                  <button key={t} onClick={() => setDraft(t)}
+                    className="shrink-0 h-9 px-3 rounded-full border border-line text-[13px] text-ink-soft bg-surface hover:border-hl/60 hover:text-hl transition">
+                    {t}
+                  </button>
+                ))}
+              </div>
+
+              {/* CTA */}
+              <button
+                disabled={!valid}
+                onClick={() => onConfirm(draft.trim())}
+                className={cls(
+                  "mt-7 w-full h-14 rounded-2xl font-extrabold text-[15px] tracking-tight transition flex items-center justify-center gap-2",
+                  valid
+                    ? "bg-hl text-brand-darker shadow-gold active:translate-y-0.5"
+                    : "bg-elev text-ink-mute"
+                )}
+              >
+                Make my wish
+                <Icon name="arrow" className="w-5 h-5" />
+              </button>
+
+              <p className="mt-4 text-center text-[11px] text-ink-mute leading-relaxed">
+                On the next screen, finish any one task to enter the draw.
+              </p>
+            </div>
+
+            {/* Past wishes modal — opens from the "X accepted" chip */}
+            <PastWishesSheet open={historyOpen} onClose={() => setHistoryOpen(false)} history={wishHistory} />
+          </div>
+        );
+      }
+
+      /* ---------- PAST WISHES BOTTOM SHEET ---------- */
+      function PastWishesSheet({ open, history, onClose }) {
+        if (!open) return null;
+        return (
+          <div className="absolute inset-0 z-50 flex items-end animate-slide" style={{ background: "rgba(5,2,20,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
+            <div className="w-full max-h-[80%] rounded-t-[28px] bg-bg border-t border-line p-5 pb-7 overflow-y-auto no-scrollbar relative">
+              <div className="mx-auto w-12 h-1 rounded-full bg-line mb-4" />
+
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.18em] font-bold text-hl flex items-center gap-1.5">
+                    <Icon name="sparkle" className="w-3.5 h-3.5" stroke="#F4CC60" /> Your past wishes
+                  </div>
+                  <h3 className="mt-1 text-[20px] font-black text-ink leading-tight">
+                    {history.length} {history.length === 1 ? "wish" : "wishes"} accepted
+                  </h3>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="h-9 w-9 rounded-full bg-elev text-ink-soft grid place-items-center hover:bg-line transition"
+                  aria-label="Close"
+                >✕</button>
+              </div>
+
+              <div className="space-y-3">
+                {history.map((h, i) => {
+                  const product = PRODUCTS.find((p) => p.id === h.productId);
+                  return (
+                    <div key={i} className="rounded-2xl card-surface p-4 flex items-start gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-hl text-brand-darker grid place-items-center shrink-0">
+                        <Icon name={product?.icon || "sparkle"} className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[16px] font-extrabold text-ink break-words">"{h.wish}"</div>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="sticker">via {product?.short || "—"}</span>
+                          <span className="text-[10px] text-ink-mute font-semibold uppercase tracking-wider">Accepted</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      /* ---------- UNLOCK TASKS (Screen 2) ---------- */
+      function UnlockTasksScreen({ wish, completedSet, taskStates, onBack, onPickTask, wishHistory = [] }) {
+        // Carousel data: first card = current/active wish, then past wishes (newest first)
+        const carousel = useMemo(() => {
+          const items = [{ kind: "active", wish, productId: null, ts: Date.now() }];
+          for (const h of wishHistory) {
+            items.push({ kind: "past", wish: h.wish, productId: h.productId, ts: h.ts });
+          }
+          return items;
+        }, [wish, wishHistory]);
+
+        return (
+          <div className="relative min-h-dvh flex flex-col bg-bg animate-slide">
+            <TopBar title="Your Wish" onBack={onBack} />
+
+            <div className="flex-1 pb-10 no-scrollbar">
+              {/* Wish carousel — current wish first, then past wishes */}
+              <WishCarousel items={carousel} />
+
+              <div className="px-5">
+                {/* Section header */}
+                <div className="mt-7 mb-3 flex items-end justify-between gap-3">
+                  <div>
+                    <div className="text-[11px] uppercase tracking-[0.18em] font-bold text-hl">
+                      Unlock your wish
+                    </div>
+                    <h2 className="mt-1 text-[20px] font-black tracking-tight text-ink leading-tight">
+                      Do <span className="text-hl">any one</span> to enter the draw
+                    </h2>
+                  </div>
+                </div>
+
+                {/* 3 Task choices */}
+                <div className="space-y-2.5">
+                  {PRODUCTS.map((p) => (
+                    <TaskChoiceCard
+                      key={p.id}
+                      p={p}
+                      state={taskStates[p.id]}
+                      completed={completedSet.has(p.id)}
+                      onPick={() => onPickTask(p.id)}
+                    />
+                  ))}
+                </div>
+
+                <p className="mt-5 text-center text-[11px] text-ink-mute leading-relaxed">
+                  Higher-impact products give you a better chance of your wish being granted.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        );
+      }
+
+      /* ---------- WISH CAROUSEL (active + past wishes) ---------- */
+      function WishCarousel({ items }) {
+        const total = items.length;
+        const [active, setActive] = useState(0);
+        const trackRef = React.useRef(null);
+
+        const onScroll = () => {
+          const el = trackRef.current;
+          if (!el) return;
+          const cardWidth = el.firstChild?.offsetWidth || 1;
+          const gap = 12; // px gap-3
+          const i = Math.round(el.scrollLeft / (cardWidth + gap));
+          setActive(Math.max(0, Math.min(items.length - 1, i)));
+        };
+
+        return (
+          <div className="relative">
+            <div
+              ref={trackRef}
+              onScroll={onScroll}
+              className="flex gap-3 overflow-x-auto no-scrollbar px-5 snap-x snap-mandatory pb-2"
+            >
+              {items.map((it, i) => {
+                const product = it.productId ? PRODUCTS.find((p) => p.id === it.productId) : null;
+                const isActive = it.kind === "active";
+                return (
+                  <div
+                    key={i}
+                    className="snap-center shrink-0 w-[88%] rounded-3xl hero-emerald text-white p-5 brand-glow overflow-hidden border border-hl/20 relative"
+                  >
+                    <Icon name="star4" className="sparkle-deco w-3 h-3 animate-twinkle" stroke="#F4CC60"
+                      style={{ top: 14, right: 22, animationDelay: `${i * 200}ms` }} />
+                    <Icon name="star4" className="sparkle-deco w-2.5 h-2.5 animate-twinkle" stroke="#FBE38C"
+                      style={{ bottom: 22, right: 60, animationDelay: `${i * 200 + 400}ms` }} />
+
+                    <div className="text-[10px] uppercase tracking-[0.22em] text-hl font-bold flex items-center gap-2">
+                      <Icon name="sparkle" className="w-3.5 h-3.5" stroke="#F4CC60" />
+                      {isActive ? "My wish · this round" : "Wish · accepted"}
+                    </div>
+
+                    <div className="mt-3 text-[24px] leading-[1.18] font-extrabold text-white break-words line-clamp-2 min-h-[56px]">
+                      "{it.wish}"
+                    </div>
+
+                    <div className="mt-4 flex items-center gap-2 flex-wrap">
+                      {isActive ? (
+                        <span className="sticker !bg-hl !text-brand-darker">New · pending task</span>
+                      ) : (
+                        <>
+                          <span className="sticker !bg-hl !text-brand-darker">via {product?.short || "—"}</span>
+                          <span className="text-[10px] text-white/65 font-semibold uppercase tracking-wider">accepted</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Dot indicator */}
+            {total > 1 && (
+              <div className="mt-2 flex items-center justify-center gap-1.5">
+                {items.map((_, i) => (
+                  <span
+                    key={i}
+                    className={cls(
+                      "h-1.5 rounded-full transition-all",
+                      i === active ? "w-5 bg-hl" : "w-1.5 bg-line"
+                    )}
+                  />
+                ))}
+                <span className="ml-2 text-[10px] text-ink-mute font-semibold">
+                  {active === 0 ? "current" : `wish ${active + 1}/${total}`}
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      /* Single task choice card — taps redirect to existing product flow */
+      function TaskChoiceCard({ p, state, completed, onPick }) {
+        const isLocked = state === "success";
+        const isFailed = state === "failed";
+        const isInProgress = state === "in-progress";
+
+        const accent =
+          state === "success" ? "border-[rgba(124,227,168,0.35)] ring-1 ring-[rgba(124,227,168,0.25)]" :
+          state === "in-progress" ? "border-[rgba(244,198,116,0.35)] ring-1 ring-[rgba(244,198,116,0.18)]" :
+          state === "failed" ? "border-[rgba(244,145,145,0.35)]" :
+          completed ? "border-hl/30" : "border-line";
+
+        const ctaText =
+          state === "success" ? "Wish granted" :
+          state === "in-progress" ? "Continue" :
+          state === "failed" ? "Try again" :
+          completed ? "Open again" : "Continue";
+
+        const statusDetail = isInProgress
+          ? (p.id === "card"
+              ? "Application under review · ~24 hrs"
+              : p.id === "refer"
+              ? "Waiting for friend to sign up"
+              : "In progress")
+          : isFailed
+          ? (p.id === "card"
+              ? "KYC didn’t go through. Try again."
+              : p.id === "upscore"
+              ? "Couldn’t link your account."
+              : "Friend didn’t complete sign-up.")
+          : null;
+
+        const showTopRightBadge = (state && state !== "idle") || completed;
+
+        return (
+          <button
+            onClick={onPick}
+            disabled={isLocked}
+            aria-label={`${p.name} — ${ctaText}`}
+            className={cls(
+              "w-full text-left relative rounded-3xl card-surface px-4 py-4 transition-all",
+              !isLocked && "active:translate-y-0.5 hover:border-hl/40",
+              "border",
+              accent
+            )}
+          >
+            <div className="flex items-center gap-4">
+              {/* Icon */}
+              <div
+                className={cls(
+                  "h-12 w-12 rounded-2xl grid place-items-center shrink-0 relative",
+                  p.chance === "high" ? "bg-hl text-brand-darker" : "bg-brand-deep text-hl"
+                )}
+              >
+                <Icon name={p.icon} className="w-6 h-6" />
+                {(completed || isLocked) && (
+                  <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-hl border-2 border-surface grid place-items-center">
+                    <Icon name="check" className="w-3 h-3" stroke="#2C0F5C" />
+                  </span>
+                )}
+              </div>
+
+              {/* Title block */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-mute truncate">
+                    {p.short}
+                  </div>
+                  {completed && !state && (
+                    <span className="text-[10px] font-semibold text-hl/80 italic shrink-0"
+                      style={{ fontFamily: "Fraunces, serif" }}>
+                      · used in last wish
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 text-[17px] font-extrabold text-ink leading-snug truncate">
+                  {p.name}
+                </div>
+                <div className="mt-1 flex items-center gap-2 flex-wrap">
+                  <ChanceChip level={p.chance} label={p.chanceLabel} />
+                </div>
+              </div>
+
+              {/* Trailing affordance: state badge OR chevron */}
+              <div className="shrink-0 self-center pl-1">
+                {showTopRightBadge ? (
+                  state && state !== "idle" ? (
+                    <StateBadge state={state} />
+                  ) : (
+                    <span className="inline-flex items-center gap-1 bg-hl text-brand-darker text-[10px] uppercase font-extrabold tracking-wider px-2 py-1 rounded-full shadow-gold">
+                      <Icon name="check" className="w-3 h-3" stroke="#2C0F5C" /> Done
+                    </span>
+                  )
+                ) : !isLocked ? (
+                  <span
+                    aria-hidden="true"
+                    className="h-8 w-8 rounded-full bg-elev/70 text-ink-soft grid place-items-center"
+                  >
+                    <Icon name="arrow" className="w-3.5 h-3.5" />
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Tagline gets its own quiet row so it never collides with chips/badges */}
+            <div className="mt-2 text-[12px] text-ink-soft leading-snug">
+              {p.tagline}
+            </div>
+
+            {/* Full-width status detail row — owns its own line */}
+            {statusDetail && (
+              <div
+                className={cls(
+                  "mt-3 rounded-xl px-3 py-2 text-[11px] flex items-center gap-2",
+                  isInProgress
+                    ? "bg-[rgba(244,198,116,0.08)] border border-[rgba(244,198,116,0.25)] text-[#F4C674]"
+                    : "bg-[rgba(244,145,145,0.06)] border border-[rgba(244,145,145,0.25)] text-[#F49191]"
+                )}
+              >
+                {isInProgress && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#F4C674] animate-pulse shrink-0" />
+                )}
+                <span className="truncate">{statusDetail}</span>
+              </div>
+            )}
+          </button>
+        );
+      }
+
+      /* ---------- REDIRECT OVERLAY ---------- */
+      function RedirectOverlay({ product, onDone }) {
+        useEffect(() => {
+          const t = setTimeout(onDone, 1600);
+          return () => clearTimeout(t);
+        }, [onDone]);
+
+        return (
+          <div className="absolute inset-0 z-50 bg-bg/95 backdrop-blur-sm grid place-items-center px-8 animate-slide">
+            <div className="text-center max-w-[280px]">
+              <div className="relative mx-auto h-20 w-20 rounded-3xl bg-hl text-brand-darker grid place-items-center shadow-gold animate-pop">
+                <Icon name={product.icon} className="w-9 h-9" />
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full bg-brand border-2 border-bg grid place-items-center">
+                  <Icon name="arrow" className="w-3.5 h-3.5" stroke="#F4CC60" />
+                </span>
+              </div>
+              <div className="mt-6 text-[11px] uppercase tracking-[0.2em] font-bold text-hl">Redirecting</div>
+              <h3 className="mt-1 text-[20px] font-black text-ink leading-tight">
+                Continuing to {product.short}…
+              </h3>
+              <p className="mt-3 text-[13px] text-ink-soft">
+                You'll finish the existing {product.short.toLowerCase()} flow. We'll bring you back to your wish.
+              </p>
+              <div className="mt-5 h-1 rounded-full bg-line overflow-hidden">
+                <div className="h-full fill animate-shimmer" style={{ width: "100%" }} />
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      /* ---------- WISH ACCEPTED (magical) ---------- */
+      function UnlockScreen({ wish, product, onAnother, onHome }) {
+        const [run, setRun] = useState(true);
+        useEffect(() => { const t = setTimeout(() => setRun(false), 2400); return () => clearTimeout(t); }, []);
+
+        const sparkles = useMemo(
+          () => Array.from({ length: 28 }).map((_, i) => ({
+            top: Math.random() * 92,
+            left: Math.random() * 96,
+            size: 3 + Math.random() * 12,
+            delay: Math.random() * 2000,
+            color: i % 4 === 0 ? "#FFFFFF" : i % 3 === 0 ? "#FBE38C" : "#F4CC60",
+          })),
+          []
+        );
+
+        const chanceText = product.chance === "high" ? "Higher — top of the queue" : "Mid — solid odds";
+
+        return (
+          <div className="relative min-h-dvh flex flex-col bg-bg animate-slide overflow-hidden">
+            {/* Magical aura background */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(closest-side at 50% 14%, rgba(244,204,96,0.28), transparent 60%)," +
+                  "radial-gradient(closest-side at 85% 55%, rgba(155,111,227,0.45), transparent 60%)," +
+                  "radial-gradient(closest-side at 15% 75%, rgba(120,73,201,0.40), transparent 60%)",
+              }}
+            />
+
+            <div className="absolute inset-0 pointer-events-none">
+              {sparkles.map((s, i) => (
+                <Icon
+                  key={i} name="star4"
+                  className="sparkle-deco animate-twinkle"
+                  stroke={s.color}
+                  style={{
+                    top: `${s.top}%`, left: `${s.left}%`,
+                    width: s.size, height: s.size,
+                    animationDelay: `${s.delay}ms`,
+                  }}
+                />
+              ))}
+            </div>
+
+            <TopBar title="" />
+            <Confetti run={run} />
+
+            <div className="relative flex-1 px-6 pb-10 flex flex-col">
+              {/* Pill */}
+              <div className="text-center mt-1">
+                <div className="inline-flex items-center gap-2 bg-hl text-brand-darker rounded-full px-4 py-2 shadow-gold animate-pop">
+                  <Icon name="sparkle" className="w-4 h-4" />
+                  <span className="text-[12px] font-extrabold tracking-[0.2em] uppercase">Wish accepted</span>
+                </div>
+              </div>
+
+              {/* Lockup w/ halo */}
+              <div className="mt-6 text-center animate-pop relative">
+                <div className="absolute left-1/2 -translate-x-1/2 -top-2 w-[300px] h-[200px] pointer-events-none"
+                  style={{ background: "radial-gradient(closest-side, rgba(244,204,96,0.55), transparent 68%)", filter: "blur(2px)" }}
+                />
+                <div className="relative">
+                  <WishLockup size="lg" color="light" />
+                </div>
+              </div>
+
+              {/* HERO WISH CARD — Playfair display, gold gradient text, premium feel */}
+              <div className="mt-6 relative animate-pop" style={{ animationDelay: "120ms" }}>
+                {/* Outer glow ring */}
+                <div
+                  className="absolute -inset-1 rounded-[28px] pointer-events-none"
+                  style={{
+                    background: "conic-gradient(from 180deg at 50% 50%, rgba(244,204,96,0.4), rgba(155,111,227,0.2), rgba(244,204,96,0.4))",
+                    filter: "blur(8px)",
+                    opacity: 0.7,
+                  }}
+                />
+                <div
+                  className="relative rounded-[26px] p-6 border-2 overflow-hidden"
+                  style={{
+                    background: "linear-gradient(160deg, rgba(91,46,170,0.55), rgba(44,15,92,0.85))",
+                    borderImage: "linear-gradient(135deg, #FBE38C 0%, #F4CC60 50%, #C9A24E 100%) 1",
+                    borderColor: "#F4CC60",
+                  }}
+                >
+                  {/* corner sparkles */}
+                  <Icon name="sparkle" className="sparkle-deco w-4 h-4 animate-twinkle"
+                    stroke="#FBE38C" style={{ top: -2, right: 14 }} />
+                  <Icon name="star4" className="sparkle-deco w-3 h-3 animate-twinkle"
+                    stroke="#F4CC60" style={{ bottom: 12, left: 12, animationDelay: "500ms" }} />
+                  <Icon name="star4" className="sparkle-deco w-2.5 h-2.5 animate-twinkle"
+                    stroke="#FFFFFF" style={{ top: 20, left: 20, animationDelay: "900ms" }} />
+
+                  <div className="text-center text-[10px] uppercase tracking-[0.32em] font-bold gold-text">
+                    your wish
+                  </div>
+
+                  <div
+                    className="mt-3 text-center text-[28px] leading-[1.12] break-words display-italic"
+                    style={{ color: "#FFFFFF", textShadow: "0 0 22px rgba(244,204,96,0.45)" }}
+                  >
+                    “{wish}”
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <span className="h-px w-6 bg-hl/50" />
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-hl">accepted</span>
+                    <span className="h-px w-6 bg-hl/50" />
+                  </div>
+                </div>
+              </div>
+
+              {/* SUPPORTING — flat strip, visually distinct from hero */}
+              <div className="mt-5 rounded-2xl card-surface p-4 animate-pop"
+                style={{ animationDelay: "240ms" }}>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-hl/15 border border-hl/30 text-hl grid place-items-center shrink-0">
+                    <Icon name={product.icon} className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-ink-mute">
+                      Task completed
+                    </div>
+                    <div className="text-[14px] font-extrabold text-ink leading-snug truncate">
+                      {product.journeyTitle}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-[9px] uppercase tracking-[0.18em] font-bold text-ink-mute">Chance</div>
+                    <div className="text-[12px] font-extrabold text-hl">
+                      {product.chance === "high" ? "Higher" : "Mid"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-line flex items-center gap-2">
+                  <Icon name="flame" className="w-4 h-4 shrink-0" stroke="#F4CC60" />
+                  <span className="text-[12px] text-ink-soft font-semibold">{chanceText}</span>
+                </div>
+              </div>
+
+              <div className="mt-auto pt-7 space-y-3">
+                <button
+                  onClick={onAnother}
+                  className="w-full h-14 rounded-2xl bg-hl text-brand-darker font-extrabold text-[15px] shadow-gold active:translate-y-0.5 transition flex items-center justify-center gap-2"
+                >
+                  Make another <span className="display-italic text-brand-darker text-[19px]">wish</span>
+                  <Icon name="sparkle" className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={onHome}
+                  className="w-full h-12 rounded-2xl border border-line text-ink-soft font-bold text-[14px]"
+                >Back to home</button>
+              </div>
+            </div>
+
+          </div>
+        );
+      }
+
+      /* ---------- APP ---------- */
+      function App() {
+        // routes: entry → unlock → granted
+        const [route, setRoute] = useState("entry");
+        const [wish, setWish] = useState("");
+        const [taskStates, setTaskStates] = useState({ card: "idle", upscore: "idle", refer: "idle" });
+        const [historicallyUsed, setHistoricallyUsed] = useState(new Set());
+        const [totalUnlocked, setTotalUnlocked] = useState(0);
+        const [redirectingProductId, setRedirectingProductId] = useState(null);
+        const [grantedProductId, setGrantedProductId] = useState(null);
+        // Past wishes carousel: list of { wish, productId, ts }
+        const [wishHistory, setWishHistory] = useState([]);
+
+        const grantedProduct = useMemo(
+          () => grantedProductId ? PRODUCTS.find((p) => p.id === grantedProductId) : null,
+          [grantedProductId]
+        );
+        const redirectingProduct = useMemo(
+          () => redirectingProductId ? PRODUCTS.find((p) => p.id === redirectingProductId) : null,
+          [redirectingProductId]
+        );
+
+        function handleEntryConfirm(text) {
+          setWish(text);
+          setRoute("unlock");
+        }
+
+        function handleEditWish(newText) {
+          if (!newText.trim() || newText === wish) return;
+          setWish(newText);
+        }
+
+        // Tapping a task triggers a redirect simulation. After it returns,
+        // we transition the product's state. Card / Refer go through
+        // in-progress first; UPscore is binary (success / failed).
+        function handlePickTask(productId) {
+          setRedirectingProductId(productId);
+        }
+
+        function handleRedirectDone() {
+          const id = redirectingProductId;
+          if (!id) return;
+          const product = PRODUCTS.find((p) => p.id === id);
+          const current = taskStates[id];
+
+          let next;
+          if (product.supportsInProgress) {
+            // Card / Refer:
+            //   idle → in-progress
+            //   in-progress / failed → success (this demo grants on second tap)
+            if (current === "idle") next = "in-progress";
+            else next = "success";
+          } else {
+            // UPscore:
+            //   idle / failed → success directly (no in-progress)
+            next = "success";
+          }
+
+          setTaskStates((prev) => ({ ...prev, [id]: next }));
+          setRedirectingProductId(null);
+
+          if (next === "success") {
+            setHistoricallyUsed((prev) => new Set([...prev, id]));
+            setTotalUnlocked((c) => c + 1);
+            setGrantedProductId(id);
+            setWishHistory((prev) => [{ wish, productId: id, ts: Date.now() }, ...prev]);
+            // Briefly let the success state render on the list before celebrating
+            setTimeout(() => setRoute("granted"), 380);
+          }
+        }
+
+        function handleAnother() {
+          // New wish: reset states & wish; preserve historicallyUsed
+          setWish("");
+          setTaskStates({ card: "idle", upscore: "idle", refer: "idle" });
+          setGrantedProductId(null);
+          setRoute("entry");
+        }
+
+        return (
+          <div className="w-full min-h-dvh flex justify-center" style={{ background: "#050214" }}>
+            <div className="phone">
+
+              {route === "entry" && (
+                <WishEntryScreen
+                  onConfirm={handleEntryConfirm}
+                  totalUnlocked={totalUnlocked}
+                  wishHistory={wishHistory}
+                />
+              )}
+
+              {route === "unlock" && (
+                <UnlockTasksScreen
+                  wish={wish}
+                  taskStates={taskStates}
+                  completedSet={historicallyUsed}
+                  wishHistory={wishHistory}
+                  onBack={() => setRoute("entry")}
+                  onPickTask={handlePickTask}
+                />
+              )}
+
+              {route === "granted" && grantedProduct && (
+                <UnlockScreen
+                  wish={wish}
+                  product={grantedProduct}
+                  onAnother={handleAnother}
+                  onHome={handleAnother}
+                />
+              )}
+
+              {/* Redirect overlay sits above any screen */}
+              {redirectingProduct && (
+                <RedirectOverlay
+                  product={redirectingProduct}
+                  onDone={handleRedirectDone}
+                />
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>
