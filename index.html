@@ -46,12 +46,12 @@
                 soft: "rgba(244,204,96,0.14)",
                 bright: "#FBE38C",
               },
-              // Dark surfaces — deep purple-black
-              bg: "#0A0421", // app canvas
-              surface: "#160A33", // default card
-              elev: "#241452", // elevated card
-              line: "#2E1F5C", // borders/dividers
-              wash: "#0F0526", // input wash on dark
+              // Neutral OLED-dark surfaces
+              bg: "#121212", // app canvas
+              surface: "#1A1A1A", // default card
+              elev: "#222222", // elevated card
+              line: "#2A2A2A", // borders/dividers
+              wash: "#171717", // input wash on dark
               // Text
               ink: { DEFAULT: "#F4F0FB", soft: "#CDC4E6", mute: "#8B7DAC", dim: "#5C4D7C" },
             },
@@ -102,7 +102,7 @@
     <style>
       :root { color-scheme: dark; }
       html, body {
-        background: #050214;
+        background: #121212;
         font-family: "Noto Sans", system-ui, sans-serif;
         -webkit-font-smoothing: antialiased;
         color: #F4F0FB;
@@ -114,7 +114,7 @@
       .phone {
         width: min(100vw, 460px);
         min-height: 100dvh;
-        background: #0A0421;
+        background: #121212;
         overflow-x: hidden;
         position: relative;
       }
@@ -200,23 +200,23 @@
       }
 
       .dock {
-        background: rgba(10,4,33,0.86);
+        background: rgba(18,18,18,0.86);
         backdrop-filter: saturate(180%) blur(18px);
         -webkit-backdrop-filter: saturate(180%) blur(18px);
-        border-top: 1px solid #2E1F5C;
+        border-top: 1px solid #2A2A2A;
       }
 
       /* Surface card with subtle inner highlight */
       .card-surface {
-        background: linear-gradient(180deg, #1A0F38 0%, #0F0526 100%);
-        border: 1px solid #2E1F5C;
+        background: linear-gradient(180deg, #1F1F1F 0%, #161616 100%);
+        border: 1px solid #2A2A2A;
       }
 
       .input-dark {
-        background: #0F0526;
-        border: 1px solid #2E1F5C;
+        background: #1A1A1A;
+        border: 1px solid #2A2A2A;
       }
-      .input-dark:focus-within { border-color: #7849C9; }
+      .input-dark:focus-within { border-color: #F4CC60; }
     </style>
   </head>
   <body class="min-h-dvh w-full">
@@ -636,7 +636,7 @@
             <div className="flex-1 flex flex-col px-5 pb-8 no-scrollbar">
               {/* Hero — Make a Wish campaign banner (uses provided artwork) */}
               <div
-                className="relative mb-6 rounded-3xl overflow-hidden border border-hl/15 shadow-card"
+                className="relative mb-5 rounded-3xl overflow-hidden border border-hl/15 shadow-card"
                 style={{ aspectRatio: "686 / 174", background: "linear-gradient(135deg, #5B2EAA 0%, #2C0F5C 100%)" }}
               >
                 <picture>
@@ -655,23 +655,28 @@
                 </picture>
               </div>
 
-              {/* Campaign meta strip */}
-              <div className="grid grid-cols-3 gap-2 mb-7">
-                {[
-                  { k: "1 task", v: "to win" },
-                  { k: "30 sec", v: "to enter" },
-                  { k: "Weekly", v: "draws" },
-                ].map((s) => (
-                  <div key={s.v} className="rounded-2xl card-surface p-3">
-                    <div className="text-[14px] font-extrabold text-hl">{s.k}</div>
-                    <div className="text-[10px] uppercase tracking-wider text-ink-mute font-semibold">{s.v}</div>
-                  </div>
-                ))}
+              {/* Highlighted instruction callout — replaces the stats strip */}
+              <div
+                className="mb-7 rounded-2xl border px-4 py-3.5 flex items-start gap-3"
+                style={{
+                  background: "linear-gradient(180deg, rgba(244,204,96,0.10) 0%, rgba(244,204,96,0.04) 100%)",
+                  borderColor: "rgba(244,204,96,0.32)",
+                }}
+              >
+                <div className="h-9 w-9 rounded-xl bg-hl text-brand-darker grid place-items-center shrink-0 shadow-gold">
+                  <Icon name="sparkle" className="w-4 h-4" stroke="#2C0F5C" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-hl">How it works</div>
+                  <p className="mt-1 text-[13px] font-semibold text-ink leading-[1.45]">
+                    On the next screen, finish <span className="text-hl font-extrabold underline underline-offset-2 decoration-hl/60">any one task</span> to enter the draw.
+                  </p>
+                </div>
               </div>
 
               {/* Wish input */}
-              <div className="mb-2 flex items-center gap-2">
-                <Icon name="sparkle" className="w-4 h-4" stroke="#F4CC60" />
+              <div className="mb-2.5 flex items-center gap-2">
+                <Icon name="sparkle" className="w-3.5 h-3.5" stroke="#F4CC60" />
                 <span className="text-[11px] uppercase tracking-[0.18em] font-bold text-hl">What's your wish?</span>
               </div>
               <h2 className="text-[26px] font-black tracking-tight text-ink leading-[1.1] mb-4">
@@ -679,7 +684,7 @@
                 <span className="wish-italic text-hl">win</span>.
               </h2>
 
-              <div className="rounded-3xl input-dark p-2 transition">
+              <div className="rounded-2xl input-dark p-2 transition">
                 <input
                   type="text"
                   value={draft}
@@ -688,8 +693,8 @@
                   placeholder="I wish for…"
                   className="w-full bg-transparent px-3 py-3 text-[18px] font-bold text-ink placeholder:text-ink-mute focus:outline-none"
                 />
-                <div className="flex items-center justify-between px-2 pb-1 pt-1">
-                  <span className={cls("text-[11px] font-semibold", draft.length >= 28 ? "text-hl" : "text-ink-mute")}>{draft.length}/30</span>
+                <div className="flex items-center justify-between px-3 pb-1.5 pt-0.5">
+                  <span className={cls("text-[11px] font-semibold tabular-nums", draft.length >= 28 ? "text-hl" : "text-ink-mute")}>{draft.length}/30</span>
                   <span className="text-[11px] text-ink-mute italic" style={{ fontFamily: "Fraunces, serif" }}>
                     keep it short
                   </span>
@@ -697,10 +702,10 @@
               </div>
 
               {/* Preset chips */}
-              <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+              <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">
                 {WISH_PRESETS.map((t) => (
                   <button key={t} onClick={() => setDraft(t)}
-                    className="shrink-0 h-9 px-3 rounded-full border border-line text-[13px] text-ink-soft bg-surface hover:border-hl/60 hover:text-hl transition">
+                    className="shrink-0 h-9 px-3.5 rounded-full border border-line text-[13px] font-medium text-ink-soft bg-surface hover:border-hl/60 hover:text-hl transition">
                     {t}
                   </button>
                 ))}
@@ -721,10 +726,6 @@
                   Make my wish
                   <Icon name="arrow" className="w-5 h-5" />
                 </button>
-
-                <p className="mt-3 text-center text-[11px] text-ink-mute leading-relaxed">
-                  On the next screen, finish any one task to enter the draw.
-                </p>
               </div>
             </div>
 
@@ -803,19 +804,20 @@
 
               <div className="px-5 flex-1 flex flex-col">
                 {/* Section header */}
-                <div className="mt-7 mb-3 flex items-end justify-between gap-3">
+                <div className="mt-6 mb-3.5 flex items-end justify-between gap-3">
                   <div>
-                    <div className="text-[11px] uppercase tracking-[0.18em] font-bold text-hl">
+                    <div className="text-[11px] uppercase tracking-[0.18em] font-bold text-hl flex items-center gap-1.5">
+                      <Icon name="sparkle" className="w-3 h-3" stroke="#F4CC60" />
                       Unlock your wish
                     </div>
-                    <h2 className="mt-1 text-[20px] font-black tracking-tight text-ink leading-tight">
+                    <h2 className="mt-1.5 text-[20px] font-black tracking-tight text-ink leading-[1.18]">
                       Do <span className="text-hl">any one</span> to enter the draw
                     </h2>
                   </div>
                 </div>
 
                 {/* 3 Task choices */}
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {PRODUCTS.map((p) => (
                     <TaskChoiceCard
                       key={p.id}
@@ -827,7 +829,7 @@
                   ))}
                 </div>
 
-                <p className="mt-auto pt-6 text-center text-[11px] text-ink-mute leading-relaxed">
+                <p className="mt-auto pt-7 text-center text-[11px] text-ink-mute leading-relaxed max-w-[280px] mx-auto">
                   Higher-impact products give you a better chance of your wish being granted.
                 </p>
               </div>
@@ -866,8 +868,8 @@
                   <div
                     key={i}
                     className={cls(
-                      "snap-center shrink-0 w-[88%] rounded-3xl hero-emerald text-white p-5 brand-glow overflow-hidden relative",
-                      isActive ? "border-2 border-hl/55 shadow-gold" : "border border-hl/15"
+                      "snap-center shrink-0 w-[88%] rounded-[26px] hero-emerald text-white p-5 brand-glow overflow-hidden relative shadow-card",
+                      isActive ? "border border-hl/55 shadow-gold" : "border border-hl/15"
                     )}
                   >
                     <Icon name="star4" className="sparkle-deco w-3 h-3 animate-twinkle" stroke="#F4CC60"
@@ -878,7 +880,7 @@
                     {/* Padlock — LOCKED on fresh wishes, no lock on accepted ones */}
                     {isActive && (
                       <div className="absolute top-4 right-4 flex flex-col items-center gap-1">
-                        <div className="h-11 w-11 rounded-2xl bg-hl text-brand-darker grid place-items-center shadow-gold animate-twinkle">
+                        <div className="h-11 w-11 rounded-2xl bg-hl text-brand-darker grid place-items-center shadow-gold">
                           <Icon name="lock" className="w-5 h-5" stroke="#2C0F5C" />
                         </div>
                         <span className="text-[9px] uppercase tracking-[0.14em] font-extrabold text-hl">LOCKED</span>
@@ -895,9 +897,16 @@
                     </div>
 
                     {isActive ? (
-                      <div className="mt-3 rounded-xl bg-black/30 border border-hl/40 px-3 py-2 flex items-center gap-2">
+                      <div
+                        className="mt-3.5 rounded-xl px-3 py-2.5 flex items-center gap-2"
+                        style={{
+                          background: "rgba(0,0,0,0.32)",
+                          border: "1px solid rgba(244,204,96,0.32)",
+                          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+                        }}
+                      >
                         <Icon name="lock" className="w-3.5 h-3.5 shrink-0" stroke="#F4CC60" />
-                        <span className="text-[11px] font-semibold text-hl">
+                        <span className="text-[11px] font-semibold text-hl leading-snug">
                           Complete <span className="font-extrabold underline underline-offset-2">any one task below</span> to unlock
                         </span>
                       </div>
@@ -966,7 +975,7 @@
         const showOverlayBadge = (state && state !== "idle") || completed;
 
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {/* Optional STATE strip above the image — pristine art stays untouched */}
             {showOverlayBadge && (
               <div className="flex items-center justify-between px-1">
@@ -985,8 +994,8 @@
               disabled={isLocked}
               aria-label={`${p.name} — ${ctaText}`}
               className={cls(
-                "w-full text-left relative block rounded-[24px] overflow-hidden transition-all",
-                !isLocked && "active:translate-y-0.5 hover:brightness-110",
+                "w-full text-left relative block rounded-[22px] overflow-hidden transition-all shadow-card",
+                !isLocked && "active:translate-y-0.5 hover:brightness-[1.06]",
                 ringAccent
               )}
               style={{ aspectRatio: "686 / 174", background: "linear-gradient(135deg, #5B2EAA 0%, #2C0F5C 100%)" }}
@@ -1129,9 +1138,9 @@
               </div>
 
               {/* Lockup w/ halo */}
-              <div className="mt-6 text-center animate-pop relative">
-                <div className="absolute left-1/2 -translate-x-1/2 -top-2 w-[300px] h-[200px] pointer-events-none"
-                  style={{ background: "radial-gradient(closest-side, rgba(244,204,96,0.55), transparent 68%)", filter: "blur(2px)" }}
+              <div className="mt-7 text-center animate-pop relative">
+                <div className="absolute left-1/2 -translate-x-1/2 -top-4 w-[320px] h-[220px] pointer-events-none"
+                  style={{ background: "radial-gradient(closest-side, rgba(244,204,96,0.55), transparent 68%)", filter: "blur(4px)" }}
                 />
                 <div className="relative">
                   <WishLockup size="lg" color="light" />
@@ -1139,7 +1148,7 @@
               </div>
 
               {/* HERO WISH CARD — Playfair display, gold gradient text, premium feel */}
-              <div className="mt-6 relative animate-pop" style={{ animationDelay: "120ms" }}>
+              <div className="mt-7 relative animate-pop" style={{ animationDelay: "120ms" }}>
                 {/* Outer glow ring */}
                 <div
                   className="absolute -inset-1 rounded-[28px] pointer-events-none"
@@ -1312,7 +1321,7 @@
         }
 
         return (
-          <div className="w-full min-h-dvh flex justify-center" style={{ background: "#050214" }}>
+          <div className="w-full min-h-dvh flex justify-center" style={{ background: "#0A0A0A" }}>
             <div className="phone">
 
               {route === "entry" && (
