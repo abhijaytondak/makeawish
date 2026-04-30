@@ -15,6 +15,9 @@
     />
     <link rel="preload" as="image" href="banner.webp" type="image/webp" fetchpriority="high" />
     <link rel="preload" as="image" href="banner.jpg" type="image/jpeg" />
+    <link rel="preload" as="image" href="task_card.webp" type="image/webp" />
+    <link rel="preload" as="image" href="task_upscore.webp" type="image/webp" />
+    <link rel="preload" as="image" href="task_refer.webp" type="image/webp" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -235,7 +238,8 @@
           chanceLabel: "Higher chance",
           icon: "card",
           journeyTitle: "Card application",
-          // Card has all states including in-progress
+          imgWebp: "task_card.webp",
+          imgJpg: "task_card.jpg",
           supportsInProgress: true,
         },
         {
@@ -247,7 +251,8 @@
           chanceLabel: "Mid chance",
           icon: "spark",
           journeyTitle: "UPscore set-up",
-          // PFM/UPscore has NO in-progress state — binary success/failed
+          imgWebp: "task_upscore.webp",
+          imgJpg: "task_upscore.jpg",
           supportsInProgress: false,
         },
         {
@@ -259,7 +264,8 @@
           chanceLabel: "Mid chance",
           icon: "gift",
           journeyTitle: "Refer & Earn",
-          // Refer has in-progress (waiting for friend to join)
+          imgWebp: "task_refer.webp",
+          imgJpg: "task_refer.jpg",
           supportsInProgress: true,
         },
       ];
@@ -857,32 +863,48 @@
                 return (
                   <div
                     key={i}
-                    className="snap-center shrink-0 w-[88%] rounded-3xl hero-emerald text-white p-5 brand-glow overflow-hidden border border-hl/20 relative"
+                    className={cls(
+                      "snap-center shrink-0 w-[88%] rounded-3xl hero-emerald text-white p-5 brand-glow overflow-hidden relative",
+                      isActive ? "border-2 border-hl/55 shadow-gold" : "border border-hl/15"
+                    )}
                   >
                     <Icon name="star4" className="sparkle-deco w-3 h-3 animate-twinkle" stroke="#F4CC60"
                       style={{ top: 14, right: 22, animationDelay: `${i * 200}ms` }} />
                     <Icon name="star4" className="sparkle-deco w-2.5 h-2.5 animate-twinkle" stroke="#FBE38C"
                       style={{ bottom: 22, right: 60, animationDelay: `${i * 200 + 400}ms` }} />
 
-                    <div className="text-[10px] uppercase tracking-[0.22em] text-hl font-bold flex items-center gap-2">
+                    {/* Padlock — LOCKED on fresh wishes, no lock on accepted ones */}
+                    {isActive && (
+                      <div className="absolute top-4 right-4 flex flex-col items-center gap-1">
+                        <div className="h-11 w-11 rounded-2xl bg-hl text-brand-darker grid place-items-center shadow-gold animate-twinkle">
+                          <Icon name="lock" className="w-5 h-5" stroke="#2C0F5C" />
+                        </div>
+                        <span className="text-[9px] uppercase tracking-[0.14em] font-extrabold text-hl">LOCKED</span>
+                      </div>
+                    )}
+
+                    <div className="text-[10px] uppercase tracking-[0.22em] text-hl font-bold flex items-center gap-2 pr-16">
                       <Icon name="sparkle" className="w-3.5 h-3.5" stroke="#F4CC60" />
                       {isActive ? "My wish · this round" : "Wish · accepted"}
                     </div>
 
-                    <div className="mt-3 text-[24px] leading-[1.18] font-extrabold text-white break-words line-clamp-2 min-h-[56px]">
+                    <div className="mt-3 text-[22px] leading-[1.2] font-extrabold text-white break-words line-clamp-2 min-h-[54px] pr-16">
                       "{it.wish}"
                     </div>
 
-                    <div className="mt-4 flex items-center gap-2 flex-wrap">
-                      {isActive ? (
-                        <span className="sticker !bg-hl !text-brand-darker">New · pending task</span>
-                      ) : (
-                        <>
-                          <span className="sticker !bg-hl !text-brand-darker">via {product?.short || "—"}</span>
-                          <span className="text-[10px] text-white/65 font-semibold uppercase tracking-wider">accepted</span>
-                        </>
-                      )}
-                    </div>
+                    {isActive ? (
+                      <div className="mt-3 rounded-xl bg-black/30 border border-hl/40 px-3 py-2 flex items-center gap-2">
+                        <Icon name="lock" className="w-3.5 h-3.5 shrink-0" stroke="#F4CC60" />
+                        <span className="text-[11px] font-semibold text-hl">
+                          Complete <span className="font-extrabold underline underline-offset-2">any one task below</span> to unlock
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="mt-4 flex items-center gap-2 flex-wrap">
+                        <span className="sticker !bg-hl !text-brand-darker">via {product?.short || "—"}</span>
+                        <span className="text-[10px] text-white/65 font-semibold uppercase tracking-wider">accepted</span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -909,132 +931,109 @@
         );
       }
 
-      /* Single task choice card — taps redirect to existing product flow */
+      /* Task choice card — image-led banner with state overlays */
       function TaskChoiceCard({ p, state, completed, onPick }) {
         const isLocked = state === "success";
         const isFailed = state === "failed";
         const isInProgress = state === "in-progress";
 
-        const accent =
-          state === "success" ? "border-[rgba(124,227,168,0.35)] ring-1 ring-[rgba(124,227,168,0.25)]" :
-          state === "in-progress" ? "border-[rgba(244,198,116,0.35)] ring-1 ring-[rgba(244,198,116,0.18)]" :
-          state === "failed" ? "border-[rgba(244,145,145,0.35)]" :
-          completed ? "border-hl/30" : "border-line";
+        const ringAccent =
+          state === "success" ? "ring-2 ring-[rgba(124,227,168,0.5)] shadow-[0_0_24px_rgba(124,227,168,0.18)]" :
+          state === "in-progress" ? "ring-2 ring-[rgba(244,198,116,0.45)] shadow-[0_0_22px_rgba(244,198,116,0.16)]" :
+          state === "failed" ? "ring-2 ring-[rgba(244,145,145,0.45)]" :
+          completed ? "ring-2 ring-hl/45" : "ring-1 ring-white/5";
 
         const ctaText =
-          state === "success" ? "Wish granted" :
+          state === "success" ? "Wish accepted" :
           state === "in-progress" ? "Continue" :
           state === "failed" ? "Try again" :
           completed ? "Open again" : "Continue";
 
         const statusDetail = isInProgress
-          ? (p.id === "card"
-              ? "Application under review · ~24 hrs"
-              : p.id === "refer"
-              ? "Waiting for friend to sign up"
-              : "In progress")
+          ? (p.id === "card" ? "Application under review · ~24 hrs"
+            : p.id === "refer" ? "Waiting for friend to sign up"
+            : "In progress")
           : isFailed
-          ? (p.id === "card"
-              ? "KYC didn’t go through. Try again."
-              : p.id === "upscore"
-              ? "Couldn’t link your account."
-              : "Friend didn’t complete sign-up.")
+          ? (p.id === "card" ? "KYC didn’t go through. Try again."
+            : p.id === "upscore" ? "Couldn’t link your account."
+            : "Friend didn’t complete sign-up.")
+          : isLocked
+          ? "Wish accepted via this task"
           : null;
 
-        const showTopRightBadge = (state && state !== "idle") || completed;
+        const showOverlayBadge = (state && state !== "idle") || completed;
 
         return (
-          <button
-            onClick={onPick}
-            disabled={isLocked}
-            aria-label={`${p.name} — ${ctaText}`}
-            className={cls(
-              "w-full text-left relative rounded-3xl card-surface px-4 py-4 transition-all",
-              !isLocked && "active:translate-y-0.5 hover:border-hl/40",
-              "border",
-              accent
+          <div className="space-y-1.5">
+            {/* Optional STATE strip above the image — pristine art stays untouched */}
+            {showOverlayBadge && (
+              <div className="flex items-center justify-between px-1">
+                {state && state !== "idle" ? (
+                  <StateBadge state={state} />
+                ) : completed ? (
+                  <span className="inline-flex items-center gap-1 bg-hl text-brand-darker text-[10px] uppercase font-extrabold tracking-wider px-2 py-1 rounded-full shadow-gold">
+                    <Icon name="check" className="w-3 h-3" stroke="#2C0F5C" /> Done · used in last wish
+                  </span>
+                ) : <span />}
+              </div>
             )}
-          >
-            <div className="flex items-center gap-4">
-              {/* Icon */}
-              <div
-                className={cls(
-                  "h-12 w-12 rounded-2xl grid place-items-center shrink-0 relative",
-                  p.chance === "high" ? "bg-hl text-brand-darker" : "bg-brand-deep text-hl"
-                )}
-              >
-                <Icon name={p.icon} className="w-6 h-6" />
-                {(completed || isLocked) && (
-                  <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-hl border-2 border-surface grid place-items-center">
-                    <Icon name="check" className="w-3 h-3" stroke="#2C0F5C" />
-                  </span>
-                )}
-              </div>
 
-              {/* Title block */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-mute truncate">
-                    {p.short}
-                  </div>
-                  {completed && !state && (
-                    <span className="text-[10px] font-semibold text-hl/80 italic shrink-0"
-                      style={{ fontFamily: "Fraunces, serif" }}>
-                      · used in last wish
-                    </span>
-                  )}
-                </div>
-                <div className="mt-0.5 text-[17px] font-extrabold text-ink leading-snug truncate">
-                  {p.name}
-                </div>
-                <div className="mt-1 flex items-center gap-2 flex-wrap">
-                  <ChanceChip level={p.chance} label={p.chanceLabel} />
-                </div>
-              </div>
+            <button
+              onClick={onPick}
+              disabled={isLocked}
+              aria-label={`${p.name} — ${ctaText}`}
+              className={cls(
+                "w-full text-left relative block rounded-[24px] overflow-hidden transition-all",
+                !isLocked && "active:translate-y-0.5 hover:brightness-110",
+                ringAccent
+              )}
+              style={{ aspectRatio: "686 / 174", background: "linear-gradient(135deg, #5B2EAA 0%, #2C0F5C 100%)" }}
+            >
+              <picture>
+                <source srcSet={p.imgWebp} type="image/webp" />
+                <source srcSet={p.imgJpg} type="image/jpeg" />
+                <img
+                  src={p.imgJpg}
+                  alt={`${p.name} — ${p.chanceLabel}`}
+                  width={686}
+                  height={174}
+                  decoding="async"
+                  className="absolute inset-0 w-full h-full object-cover select-none"
+                  draggable="false"
+                />
+              </picture>
 
-              {/* Trailing affordance: state badge OR chevron */}
-              <div className="shrink-0 self-center pl-1">
-                {showTopRightBadge ? (
-                  state && state !== "idle" ? (
-                    <StateBadge state={state} />
-                  ) : (
-                    <span className="inline-flex items-center gap-1 bg-hl text-brand-darker text-[10px] uppercase font-extrabold tracking-wider px-2 py-1 rounded-full shadow-gold">
-                      <Icon name="check" className="w-3 h-3" stroke="#2C0F5C" /> Done
-                    </span>
-                  )
-                ) : !isLocked ? (
-                  <span
-                    aria-hidden="true"
-                    className="h-8 w-8 rounded-full bg-elev/70 text-ink-soft grid place-items-center"
-                  >
-                    <Icon name="arrow" className="w-3.5 h-3.5" />
-                  </span>
-                ) : null}
-              </div>
-            </div>
+              {isFailed && (
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{ background: "rgba(244,145,145,0.06)" }} />
+              )}
+              {isLocked && (
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{ background: "rgba(124,227,168,0.05)" }} />
+              )}
+            </button>
 
-            {/* Tagline gets its own quiet row so it never collides with chips/badges */}
-            <div className="mt-2 text-[12px] text-ink-soft leading-snug">
-              {p.tagline}
-            </div>
-
-            {/* Full-width status detail row — owns its own line */}
+            {/* Status detail row — outside the image, full width */}
             {statusDetail && (
               <div
                 className={cls(
-                  "mt-3 rounded-xl px-3 py-2 text-[11px] flex items-center gap-2",
-                  isInProgress
-                    ? "bg-[rgba(244,198,116,0.08)] border border-[rgba(244,198,116,0.25)] text-[#F4C674]"
-                    : "bg-[rgba(244,145,145,0.06)] border border-[rgba(244,145,145,0.25)] text-[#F49191]"
+                  "rounded-xl px-3 py-2 text-[11px] flex items-center gap-2 mx-1",
+                  isInProgress ? "bg-[rgba(244,198,116,0.10)] border border-[rgba(244,198,116,0.30)] text-[#F4C674]" :
+                  isFailed ? "bg-[rgba(244,145,145,0.08)] border border-[rgba(244,145,145,0.30)] text-[#F49191]" :
+                  isLocked ? "bg-[rgba(124,227,168,0.10)] border border-[rgba(124,227,168,0.30)] text-[#7CE3A8]" :
+                  ""
                 )}
               >
                 {isInProgress && (
                   <span className="h-1.5 w-1.5 rounded-full bg-[#F4C674] animate-pulse shrink-0" />
                 )}
-                <span className="truncate">{statusDetail}</span>
+                {isLocked && (
+                  <Icon name="check" className="w-3.5 h-3.5 shrink-0" stroke="#7CE3A8" />
+                )}
+                <span className="truncate font-semibold">{statusDetail}</span>
               </div>
             )}
-          </button>
+          </div>
         );
       }
 
