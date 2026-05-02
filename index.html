@@ -446,6 +446,14 @@
                 <path d="M12 2l1.6 4.4L18 8l-4.4 1.6L12 14l-1.6-4.4L6 8l4.4-1.6L12 2zM18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14z" />
               </svg>
             );
+          case "info":
+            return (
+              <svg {...props}>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 11v5" />
+                <path d="M12 7.75v.5" />
+              </svg>
+            );
           case "star4":
             return (
               <svg {...props}>
@@ -785,7 +793,7 @@
                 }}
               >
                 <div className="h-9 w-9 rounded-xl bg-hl text-brand-darker grid place-items-center shrink-0 shadow-gold">
-                  <Icon name="sparkle" className="w-4 h-4" stroke="#2C0F5C" />
+                  <Icon name="info" className="w-4 h-4" stroke="#2C0F5C" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-hl">How it works</div>
@@ -824,7 +832,8 @@
                   maxLength={30}
                   rows={2}
                   placeholder="Type your wish here…"
-                  className="block w-full bg-transparent text-[22px] leading-[1.25] font-bold text-ink placeholder:text-ink-mute focus:outline-none resize-none px-5 pt-5 pb-2 min-h-[112px]"
+                  className="block w-full bg-transparent leading-[1.25] font-bold text-ink placeholder:text-ink-mute focus:outline-none resize-none px-5 pt-5 pb-2"
+                  style={{ fontSize: "clamp(20px, 5vw, 26px)", minHeight: "clamp(120px, 22vh, 240px)" }}
                 />
                 <div className="flex items-center justify-between px-5 pb-3">
                   <span className={cls("text-[11px] font-semibold tabular-nums", draft.length >= 28 ? "text-hl" : "text-ink-mute")}>
@@ -980,7 +989,6 @@
       /* ---------- WISH CAROUSEL (active + past wishes) ---------- */
       function WishCarousel({ items }) {
         const total = items.length;
-        const single = total === 1;
         const [active, setActive] = useState(0);
         const trackRef = React.useRef(null);
 
@@ -996,12 +1004,9 @@
         return (
           <div className="relative">
             <div
-              ref={single ? null : trackRef}
-              onScroll={single ? undefined : onScroll}
-              className={cls(
-                "flex pb-2",
-                single ? "" : "gap-3 overflow-x-auto no-scrollbar px-5 snap-x snap-mandatory"
-              )}
+              ref={trackRef}
+              onScroll={onScroll}
+              className="flex pb-2 gap-3 overflow-x-auto no-scrollbar px-5 snap-x snap-mandatory"
             >
               {items.map((it, i) => {
                 const product = it.productId ? PRODUCTS.find((p) => p.id === it.productId) : null;
@@ -1011,12 +1016,8 @@
                     key={i}
                     className={cls(
                       "hero-emerald text-white brand-glow overflow-hidden relative shadow-card",
-                      single
-                        ? "w-full rounded-b-[28px] border-b border-hl/55 shadow-gold px-6 py-6"
-                        : cls(
-                            "snap-center shrink-0 w-[88%] rounded-[26px] inner-rim p-5",
-                            isActive ? "border border-hl/55 shadow-gold" : "border border-hl/15"
-                          )
+                      "snap-center shrink-0 w-[88%] rounded-[26px] inner-rim p-5",
+                      isActive ? "border border-hl/55 shadow-gold" : "border border-hl/15"
                     )}
                   >
                     <Icon name="star4" className="sparkle-deco w-3 h-3 animate-twinkle" stroke="#F4CC60"
@@ -1154,6 +1155,14 @@
               {isLocked && (
                 <div className="absolute inset-0 pointer-events-none"
                   style={{ background: "rgba(124,227,168,0.05)" }} />
+              )}
+
+              {/* Higher chance badge — only on high-chance products in idle/active state */}
+              {p.chance === "high" && !isLocked && !isFailed && !isInProgress && (
+                <div className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 bg-hl text-brand-darker text-[10px] uppercase font-extrabold tracking-[0.1em] px-2.5 py-1 rounded-full shadow-gold pointer-events-none">
+                  <Icon name="sparkle" className="w-2.5 h-2.5" stroke="#2C0F5C" />
+                  Higher chance
+                </div>
               )}
             </button>
 
