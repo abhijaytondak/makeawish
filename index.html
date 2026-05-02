@@ -624,22 +624,6 @@
         );
       }
 
-      /* Live countdown — formats as "DD : HH : MM" until target */
-      function Countdown({ days = 7 }) {
-        const target = useMemo(() => Date.now() + days * 24 * 60 * 60 * 1000, [days]);
-        const [now, setNow] = useState(Date.now());
-        useEffect(() => {
-          const t = setInterval(() => setNow(Date.now()), 1000);
-          return () => clearInterval(t);
-        }, []);
-        const diff = Math.max(0, target - now);
-        const d = Math.floor(diff / (24 * 60 * 60 * 1000));
-        const h = Math.floor((diff / (60 * 60 * 1000)) % 24);
-        const m = Math.floor((diff / (60 * 1000)) % 60);
-        const pad = (n) => String(n).padStart(2, "0");
-        return <>{pad(d)}d : {pad(h)}h : {pad(m)}m</>;
-      }
-
       /* ---------- CHROME ---------- */
       function StatusBar() {
         return (
@@ -836,11 +820,17 @@
                   style={{ fontSize: "clamp(20px, 5vw, 26px)", minHeight: "clamp(120px, 22vh, 240px)" }}
                 />
                 <div className="flex items-center justify-between px-5 pb-3">
-                  <span className={cls("text-[11px] font-semibold tabular-nums", draft.length >= 28 ? "text-hl" : "text-ink-mute")}>
+                  <span className={cls(
+                    "text-[11px] font-semibold tabular-nums transition-colors",
+                    draft.length >= 30 ? "text-[#F49191]" : draft.length >= 28 ? "text-hl" : "text-ink-mute"
+                  )}>
                     {draft.length}/30
                   </span>
-                  <span className="text-[11px] text-ink-mute italic" style={{ fontFamily: "Fraunces, serif" }}>
-                    keep it short
+                  <span className={cls(
+                    "text-[11px] italic transition-colors",
+                    draft.length >= 30 ? "text-[#F49191] font-semibold" : "text-ink-mute"
+                  )} style={{ fontFamily: "Fraunces, serif" }}>
+                    {draft.length >= 30 ? "max length reached" : "keep it short"}
                   </span>
                 </div>
               </div>
@@ -875,11 +865,20 @@
                   Make my wish
                   <Icon name="arrow" className="w-5 h-5" />
                 </button>
+                {/* Compliance footer link — draw rules + T&Cs */}
+                <button
+                  type="button"
+                  onClick={() => setHistoryOpen("rules")}
+                  className="mt-3 w-full text-center text-[11px] text-ink-mute hover:text-hl underline underline-offset-2 decoration-ink-mute/40 hover:decoration-hl/60 transition"
+                >
+                  How the draw works · Terms &amp; conditions
+                </button>
               </div>
             </div>
 
             {/* Past wishes modal — opens from the "X accepted" chip */}
-            <PastWishesSheet open={historyOpen} onClose={() => setHistoryOpen(false)} history={wishHistory} />
+            <PastWishesSheet open={historyOpen === true} onClose={() => setHistoryOpen(false)} history={wishHistory} />
+            <DrawRulesSheet open={historyOpen === "rules"} onClose={() => setHistoryOpen(false)} />
           </div>
         );
       }
@@ -932,6 +931,41 @@
         );
       }
 
+      /* ---------- DRAW RULES BOTTOM SHEET (compliance) ---------- */
+      function DrawRulesSheet({ open, onClose }) {
+        if (!open) return null;
+        return (
+          <div className="absolute inset-0 z-50 flex items-end animate-slide" style={{ background: "rgba(5,2,20,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
+            <div className="w-full max-h-[80%] rounded-t-[28px] bg-bg border-t border-line p-5 pb-7 overflow-y-auto no-scrollbar relative">
+              <div className="mx-auto w-12 h-1 rounded-full bg-line mb-4" />
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.18em] font-bold text-hl flex items-center gap-1.5">
+                    <Icon name="info" className="w-3.5 h-3.5" stroke="#F4CC60" /> The fine print
+                  </div>
+                  <h3 className="mt-1 text-[20px] font-black text-ink leading-tight">How the draw works</h3>
+                </div>
+                <button onClick={onClose} className="h-9 w-9 rounded-full bg-elev text-ink-soft grid place-items-center hover:bg-line transition" aria-label="Close">✕</button>
+              </div>
+
+              <ol className="space-y-3 text-[13px] text-ink-soft leading-relaxed">
+                <li><span className="font-extrabold text-ink">1. Make a wish</span> aligned with a SalarySe financial goal.</li>
+                <li><span className="font-extrabold text-ink">2. Complete one product task</span> — Credit Card, UPscore, or Refer — to enter that week's draw.</li>
+                <li><span className="font-extrabold text-ink">3. Winners</span> are picked by random draw from all eligible entries every <span className="text-hl font-semibold">Friday at 6 PM IST</span>. You'll be notified in-app.</li>
+              </ol>
+
+              <div className="mt-5 rounded-2xl bg-elev/60 border border-line p-4 text-[12px] text-ink-soft leading-relaxed space-y-2">
+                <p><span className="font-extrabold text-ink">Eligibility:</span> Salaried users 18+ with active SalarySe accounts. Not valid in states where promotional draws are restricted.</p>
+                <p><span className="font-extrabold text-ink">No purchase necessary:</span> Email <span className="text-hl">support@salaryse.com</span> with subject "Make a Wish entry" for an alternate-route entry.</p>
+                <p><span className="font-extrabold text-ink">Prize:</span> One winner per week, prize value capped at the wish amount or ₹50,000 (whichever is lower), at SalarySe's discretion. Cash equivalent may be substituted.</p>
+                <p><span className="font-extrabold text-ink">Wish text:</span> Stored for moderation. May be shared anonymously in marketing if you win.</p>
+                <p>Full T&amp;Cs at <span className="text-hl">salaryse.com/wish-terms</span>. SalarySe employees and immediate family not eligible.</p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       /* ---------- UNLOCK TASKS (Screen 2) ---------- */
       function UnlockTasksScreen({ wish, completedSet, taskStates, onBack, onPickTask, wishHistory = [] }) {
         // Carousel data: first card = current/active wish, then past wishes (newest first)
@@ -975,10 +1009,6 @@
                   ))}
                 </div>
 
-                {/* Footer hint — more prominent, gold accent on key phrase */}
-                <p className="mt-auto pt-7 text-center text-[12.5px] text-ink-soft leading-relaxed max-w-[300px] mx-auto">
-                  <span className="text-hl font-semibold">Higher-impact products</span> give you a better chance of your wish being granted.
-                </p>
               </div>
             </div>
 
@@ -989,6 +1019,7 @@
       /* ---------- WISH CAROUSEL (active + past wishes) ---------- */
       function WishCarousel({ items }) {
         const total = items.length;
+        const single = total === 1;
         const [active, setActive] = useState(0);
         const trackRef = React.useRef(null);
 
@@ -1004,9 +1035,13 @@
         return (
           <div className="relative">
             <div
-              ref={trackRef}
-              onScroll={onScroll}
-              className="flex pb-2 gap-3 overflow-x-auto no-scrollbar px-5 snap-x snap-mandatory"
+              ref={single ? null : trackRef}
+              onScroll={single ? undefined : onScroll}
+              className={cls(
+                // py-3 gives the gold glow vertical room before the overflow-x clip kicks in
+                "flex gap-3 px-5 py-3",
+                single ? "" : "overflow-x-auto no-scrollbar snap-x snap-mandatory"
+              )}
             >
               {items.map((it, i) => {
                 const product = it.productId ? PRODUCTS.find((p) => p.id === it.productId) : null;
@@ -1015,8 +1050,8 @@
                   <div
                     key={i}
                     className={cls(
-                      "hero-emerald text-white brand-glow overflow-hidden relative shadow-card",
-                      "snap-center shrink-0 w-[88%] rounded-[26px] inner-rim p-5",
+                      "hero-emerald text-white brand-glow overflow-hidden relative shadow-card rounded-[26px] inner-rim p-5",
+                      single ? "w-full" : "snap-center shrink-0 w-[88%]",
                       isActive ? "border border-hl/55 shadow-gold" : "border border-hl/15"
                     )}
                   >
@@ -1157,13 +1192,6 @@
                   style={{ background: "rgba(124,227,168,0.05)" }} />
               )}
 
-              {/* Higher chance badge — only on high-chance products in idle/active state */}
-              {p.chance === "high" && !isLocked && !isFailed && !isInProgress && (
-                <div className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 bg-hl text-brand-darker text-[10px] uppercase font-extrabold tracking-[0.1em] px-2.5 py-1 rounded-full shadow-gold pointer-events-none">
-                  <Icon name="sparkle" className="w-2.5 h-2.5" stroke="#2C0F5C" />
-                  Higher chance
-                </div>
-              )}
             </button>
 
             {/* Status detail row — outside the image, full width */}
@@ -1185,6 +1213,11 @@
                 )}
                 <span className="truncate font-semibold">{statusDetail}</span>
               </div>
+            )}
+            {isInProgress && (
+              <p className="text-[10px] text-ink-mute italic mx-1 mt-1" style={{ fontFamily: "Fraunces, serif" }}>
+                demo: tap again to simulate completion
+              </p>
             )}
           </div>
         );
@@ -1224,6 +1257,7 @@
       /* ---------- WISH ACCEPTED — typography-led wow moment ---------- */
       function UnlockScreen({ wish, product, onAnother, onHome }) {
         const [run, setRun] = useState(true);
+        const [rulesOpen, setRulesOpen] = useState(false);
         useEffect(() => { const t = setTimeout(() => setRun(false), 2800); return () => clearTimeout(t); }, []);
 
         // Dense magical sparkle field
@@ -1355,47 +1389,14 @@
                   </p>
                 </div>
 
-                {/* Countdown block — fills dead space, sets concrete expectation */}
-                <div
-                  className="mt-7 w-full max-w-[300px] animate-pop"
+                {/* Reassurance — concise, no countdown */}
+                <p
+                  className="mt-6 text-center text-[12.5px] text-ink-soft leading-snug max-w-[280px] animate-pop"
                   style={{ animationDelay: "420ms" }}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] uppercase tracking-[0.32em] font-bold text-hl">
-                      winners revealed
-                    </span>
-                    <span
-                      className="text-[13px] font-extrabold tabular-nums"
-                      style={{ color: "#F4CC60" }}
-                    >
-                      <Countdown days={7} />
-                    </span>
-                  </div>
-                  <div className="relative h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(244,204,96,0.12)" }}>
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-full"
-                      style={{
-                        width: "14%",
-                        background: "linear-gradient(90deg, rgba(244,204,96,0.85), rgba(255,246,212,0.95))",
-                        boxShadow: "0 0 12px rgba(244,204,96,0.55)",
-                      }}
-                    />
-                    {/* Animated shimmer dot at the leading edge */}
-                    <div
-                      className="absolute top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full animate-pulse"
-                      style={{
-                        left: "calc(14% - 5px)",
-                        background: "#FFF6D4",
-                        boxShadow: "0 0 12px rgba(244,204,96,0.85)",
-                      }}
-                    />
-                  </div>
-                  <p className="mt-2.5 text-center text-[12px] text-ink-soft leading-snug">
-                    You’re in the draw with thousands of others.
-                    <br />
-                    <span className="text-hl font-semibold">Keep an eye on your app.</span>
-                  </p>
-                </div>
+                  You’re in the draw.{" "}
+                  <span className="text-hl font-semibold">Keep an eye on your app</span> for results.
+                </p>
               </div>
 
               {/* CTAs — pinned to bottom */}
@@ -1412,9 +1413,17 @@
                   onClick={onHome}
                   className="w-full h-12 rounded-2xl text-ink-soft font-bold text-[14px] hover:text-hl active:translate-y-0.5 transition"
                 >Back to home</button>
+                <button
+                  type="button"
+                  onClick={() => setRulesOpen(true)}
+                  className="mt-1 w-full text-center text-[11px] text-ink-mute hover:text-hl underline underline-offset-2 decoration-ink-mute/40 hover:decoration-hl/60 transition"
+                >
+                  How the draw works · Terms &amp; conditions
+                </button>
               </div>
             </div>
 
+            <DrawRulesSheet open={rulesOpen} onClose={() => setRulesOpen(false)} />
           </div>
         );
       }
