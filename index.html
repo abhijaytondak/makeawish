@@ -17,6 +17,7 @@
     <link rel="preload" as="image" href="banner.jpg" type="image/jpeg" />
     <link rel="preload" as="image" href="task_card.webp" type="image/webp" />
     <link rel="preload" as="image" href="task_upscore.webp" type="image/webp" />
+    <link rel="preload" as="image" href="task_upi.webp" type="image/webp" />
     <link rel="preload" as="image" href="task_refer.webp" type="image/webp" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -326,6 +327,19 @@
           journeyTitle: "UPscore set-up",
           imgWebp: "task_upscore.webp",
           imgJpg: "task_upscore.jpg",
+          supportsInProgress: false,
+        },
+        {
+          id: "upi",
+          name: "Complete 1st UPI Payment",
+          short: "UPI",
+          tagline: "Get up to ₹50 cashback",
+          chance: "high",
+          chanceLabel: "Higher chance",
+          icon: "spark",
+          journeyTitle: "UPI payment",
+          imgWebp: "task_upi.webp",
+          imgJpg: "task_upi.jpg",
           supportsInProgress: false,
         },
         {
@@ -950,7 +964,7 @@
 
               <ol className="space-y-3 text-[13px] text-ink-soft leading-relaxed">
                 <li><span className="font-extrabold text-ink">1. Make a wish</span> aligned with a SalarySe financial goal.</li>
-                <li><span className="font-extrabold text-ink">2. Complete one product task</span> — Credit Card, UPscore, or Refer — to enter that week's draw.</li>
+                <li><span className="font-extrabold text-ink">2. Complete one product task</span> — Credit Card, UPscore, UPI, or Refer — to enter that week's draw.</li>
                 <li><span className="font-extrabold text-ink">3. Winners</span> are picked by random draw from all eligible entries every <span className="text-hl font-semibold">Friday at 6 PM IST</span>. You'll be notified in-app.</li>
               </ol>
 
@@ -1136,6 +1150,7 @@
           : isFailed
           ? (p.id === "card" ? "KYC didn’t go through. Try again."
             : p.id === "upscore" ? "Couldn’t link your account."
+            : p.id === "upi" ? "Payment didn’t go through. Try again."
             : "Friend didn’t complete sign-up.")
           : isLocked
           ? "Wish accepted via this task"
@@ -1433,7 +1448,7 @@
         // routes: entry → unlock → granted
         const [route, setRoute] = useState("entry");
         const [wish, setWish] = useState("");
-        const [taskStates, setTaskStates] = useState({ card: "idle", upscore: "idle", refer: "idle" });
+        const [taskStates, setTaskStates] = useState({ card: "idle", upscore: "idle", upi: "idle", refer: "idle" });
         const [historicallyUsed, setHistoricallyUsed] = useState(new Set());
         const [totalUnlocked, setTotalUnlocked] = useState(0);
         const [redirectingProductId, setRedirectingProductId] = useState(null);
@@ -1502,7 +1517,7 @@
         function handleAnother() {
           // New wish: reset states & wish; preserve historicallyUsed
           setWish("");
-          setTaskStates({ card: "idle", upscore: "idle", refer: "idle" });
+          setTaskStates({ card: "idle", upscore: "idle", upi: "idle", refer: "idle" });
           setGrantedProductId(null);
           setRoute("entry");
         }
