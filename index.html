@@ -992,6 +992,50 @@
               {/* Wish carousel — current wish first, then past wishes */}
               <WishCarousel items={carousel} />
 
+              {/* Chance-to-fulfill meter — sits right below the wish card */}
+              {anyDone && (
+                <div className="px-5 mt-3">
+                  <div className="rounded-2xl border border-hl/25 bg-[rgba(244,204,96,0.06)] p-4 animate-pop">
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-hl">
+                          Chance to fulfill the wish
+                        </div>
+                        <div className="mt-0.5 font-black text-ink leading-none">
+                          <span className="text-[36px]">{chancePct}</span>
+                          <span className="text-[18px] text-ink-soft font-extrabold">%</span>
+                        </div>
+                      </div>
+                      <div className="text-right text-[11px] text-ink-soft font-semibold">
+                        {doneCount}/{TASK_COUNT} tasks done
+                      </div>
+                    </div>
+                    <div className="mt-3 h-2 rounded-full bg-line overflow-hidden">
+                      <div
+                        className="h-full rounded-full fill transition-all duration-500"
+                        style={{ width: `${chancePct}%` }}
+                      />
+                    </div>
+                    <p className="mt-3 text-[12px] leading-snug text-ink-soft">
+                      {remaining > 0 ? (
+                        <>
+                          Want a better shot? Complete{" "}
+                          <span className="text-hl font-bold">
+                            {remaining} more {remaining === 1 ? "task" : "tasks"}
+                          </span>{" "}
+                          to raise it to <span className="text-hl font-bold">{nextPct}%</span>.
+                        </>
+                      ) : (
+                        <>
+                          Maxed out — you've locked in the best odds at{" "}
+                          <span className="text-hl font-bold">90%</span>. ✨
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="px-5 mt-6 flex-1 flex flex-col">
                 {/* Section header — directional, action-oriented */}
                 <div className="mb-4">
@@ -1016,59 +1060,17 @@
                   ))}
                 </div>
 
-                {/* Probability meter + See-your-wish CTA — unlock once any task is done */}
+                {/* See-your-wish CTA — unlocks once any task is complete */}
                 {anyDone && (
-                  <div className="mt-7 space-y-4">
-                    {/* Grant-chance meter */}
-                    <div className="rounded-2xl border border-hl/25 bg-[rgba(244,204,96,0.06)] p-4 animate-pop">
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-hl">
-                            Chance of grant
-                          </div>
-                          <div className="mt-0.5 font-black text-ink leading-none">
-                            <span className="text-[36px]">{chancePct}</span>
-                            <span className="text-[18px] text-ink-soft font-extrabold">%</span>
-                          </div>
-                        </div>
-                        <div className="text-right text-[11px] text-ink-soft font-semibold">
-                          {doneCount}/{TASK_COUNT} tasks done
-                        </div>
-                      </div>
-                      <div className="mt-3 h-2 rounded-full bg-line overflow-hidden">
-                        <div
-                          className="h-full rounded-full fill transition-all duration-500"
-                          style={{ width: `${chancePct}%` }}
-                        />
-                      </div>
-                      <p className="mt-3 text-[12px] leading-snug text-ink-soft">
-                        {remaining > 0 ? (
-                          <>
-                            Want a better shot? Complete{" "}
-                            <span className="text-hl font-bold">
-                              {remaining} more {remaining === 1 ? "task" : "tasks"}
-                            </span>{" "}
-                            to raise it to <span className="text-hl font-bold">{nextPct}%</span>.
-                          </>
-                        ) : (
-                          <>
-                            Maxed out — you've locked in the best odds at{" "}
-                            <span className="text-hl font-bold">90%</span>. ✨
-                          </>
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="animate-pop">
-                      <button
-                        onClick={onSeeWish}
-                        className="w-full h-[58px] rounded-2xl bg-hl text-brand-darker font-extrabold text-[16px] shadow-gold active:translate-y-0.5 active:scale-[0.99] hover:brightness-110 transition flex items-center justify-center gap-2"
-                        style={{ boxShadow: "0 0 0 1px rgba(255,246,212,0.4) inset, 0 8px 28px rgba(244,204,96,0.32)" }}
-                      >
-                        See your <span className="display-italic text-brand-darker text-[20px]">wish</span>
-                        <Icon name="sparkle" className="w-5 h-5" />
-                      </button>
-                    </div>
+                  <div className="mt-7 animate-pop">
+                    <button
+                      onClick={onSeeWish}
+                      className="w-full h-[58px] rounded-2xl bg-hl text-brand-darker font-extrabold text-[16px] shadow-gold active:translate-y-0.5 active:scale-[0.99] hover:brightness-110 transition flex items-center justify-center gap-2"
+                      style={{ boxShadow: "0 0 0 1px rgba(255,246,212,0.4) inset, 0 8px 28px rgba(244,204,96,0.32)" }}
+                    >
+                      See your <span className="display-italic text-brand-darker text-[20px]">wish</span>
+                      <Icon name="sparkle" className="w-5 h-5" />
+                    </button>
                   </div>
                 )}
 
@@ -1431,7 +1433,7 @@
                 {/* Credit block — grant chance from completed tasks */}
                 <div className="mt-7 flex flex-col items-center animate-pop" style={{ animationDelay: "320ms" }}>
                   <div className="text-[10px] uppercase tracking-[0.42em] font-bold text-hl">
-                    chance of grant
+                    chance to fulfill the wish
                   </div>
                   <div
                     className="mt-1 font-black text-ink leading-none"
