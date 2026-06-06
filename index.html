@@ -304,9 +304,9 @@
       const PRODUCTS = [
         {
           id: "card",
-          name: "Apply for Card",
+          name: "Apply for CUB/RBL CC",
           short: "Credit Card",
-          tagline: "Apply for the SalarySe Card",
+          tagline: "Apply for a CUB or RBL credit card",
           chance: "high",
           chanceLabel: "Higher chance",
           icon: "card",
@@ -317,9 +317,9 @@
         },
         {
           id: "upi",
-          name: "Complete 1st UPI Payment",
+          name: "Complete 5 UPI Transactions",
           short: "UPI",
-          tagline: "Get up to ₹50 cashback",
+          tagline: "Make 5 UPI payments",
           chance: "high",
           chanceLabel: "Higher chance",
           icon: "spark",
@@ -330,9 +330,9 @@
         },
         {
           id: "refer",
-          name: "Refer a friend",
+          name: "Refer 5 friends",
           short: "Refer & Earn",
-          tagline: "Invite a friend to SalarySe",
+          tagline: "Invite 5 friends to SalarySe",
           chance: "mid",
           chanceLabel: "Mid chance",
           icon: "gift",
@@ -967,7 +967,9 @@
       }
 
       /* ---------- UNLOCK TASKS (Screen 2) ---------- */
-      function UnlockTasksScreen({ wish, completedSet, taskStates, onBack, onPickTask, wishHistory = [] }) {
+      function UnlockTasksScreen({ wish, completedSet, taskStates, onBack, onPickTask, onSeeWish, wishHistory = [] }) {
+        const doneCount = Object.values(taskStates).filter((s) => s === "success").length;
+        const anyDone = doneCount > 0;
         // Carousel data: first card = current/active wish, then past wishes (newest first)
         const carousel = useMemo(() => {
           const items = [{ kind: "active", wish, productId: null, ts: Date.now() }];
@@ -989,10 +991,10 @@
                 {/* Section header — directional, action-oriented */}
                 <div className="mb-4">
                   <h2 className="text-[22px] font-black tracking-tight text-ink leading-[1.18]">
-                    Finish <span className="text-hl">any one</span> task below
+                    Complete <span className="text-hl">these tasks</span>
                   </h2>
                   <p className="mt-1 text-[13px] text-ink-soft leading-snug">
-                    Pick a product. Complete the journey. Your wish enters the draw.
+                    Finish any task to enter your wish in the draw. Complete more to boost your odds.
                   </p>
                 </div>
 
@@ -1008,6 +1010,23 @@
                     />
                   ))}
                 </div>
+
+                {/* See-your-wish CTA — unlocks once any task is complete */}
+                {anyDone && (
+                  <div className="mt-7 animate-pop">
+                    <button
+                      onClick={onSeeWish}
+                      className="w-full h-[58px] rounded-2xl bg-hl text-brand-darker font-extrabold text-[16px] shadow-gold active:translate-y-0.5 active:scale-[0.99] hover:brightness-110 transition flex items-center justify-center gap-2"
+                      style={{ boxShadow: "0 0 0 1px rgba(255,246,212,0.4) inset, 0 8px 28px rgba(244,204,96,0.32)" }}
+                    >
+                      See your <span className="display-italic text-brand-darker text-[20px]">wish</span>
+                      <Icon name="sparkle" className="w-5 h-5" />
+                    </button>
+                    <p className="mt-2 text-center text-[11px] text-ink-mute">
+                      {doneCount} of {PRODUCTS.length} tasks done · finish the rest for better odds
+                    </p>
+                  </div>
+                )}
 
               </div>
             </div>
@@ -1402,17 +1421,13 @@
               {/* CTAs — pinned to bottom */}
               <div className="mt-auto pt-8 w-full space-y-2">
                 <button
-                  onClick={onAnother}
+                  onClick={onHome}
                   className="w-full h-[58px] rounded-2xl bg-hl text-brand-darker font-extrabold text-[16px] shadow-gold active:translate-y-0.5 active:scale-[0.99] hover:brightness-110 transition flex items-center justify-center gap-2"
                   style={{ boxShadow: "0 0 0 1px rgba(255,246,212,0.4) inset, 0 8px 28px rgba(244,204,96,0.32)" }}
                 >
-                  Make another <span className="display-italic text-brand-darker text-[20px]">wish</span>
-                  <Icon name="sparkle" className="w-5 h-5" />
+                  Back to my <span className="display-italic text-brand-darker text-[20px]">tasks</span>
+                  <Icon name="arrow" className="w-5 h-5" />
                 </button>
-                <button
-                  onClick={onHome}
-                  className="w-full h-12 rounded-2xl text-ink-soft font-bold text-[14px] hover:text-hl active:translate-y-0.5 transition"
-                >Back to home</button>
                 <button
                   type="button"
                   onClick={() => setRulesOpen(true)}
@@ -1491,19 +1506,23 @@
           if (next === "success") {
             setHistoricallyUsed((prev) => new Set([...prev, id]));
             setTotalUnlocked((c) => c + 1);
+            // Single-wish flow: completing a task marks it done inline and
+            // stays on the tasks list. Remember the latest completed task so the
+            // wish screen can credit it; the user reaches that screen on demand.
             setGrantedProductId(id);
-            setWishHistory((prev) => [{ wish, productId: id, ts: Date.now() }, ...prev]);
-            // Briefly let the success state render on the list before celebrating
-            setTimeout(() => setRoute("granted"), 380);
           }
         }
 
+        // One wish per visit: completing any task makes the wish screen
+        // reachable. The user taps "See your wish" to view it.
+        function handleSeeWish() {
+          if (grantedProductId) setRoute("granted");
+        }
+
+        // No "make another wish" loop — return to the same tasks list so the
+        // user can finish the remaining tasks for better odds.
         function handleAnother() {
-          // New wish: reset states & wish; preserve historicallyUsed
-          setWish("");
-          setTaskStates({ card: "idle", upi: "idle", refer: "idle" });
-          setGrantedProductId(null);
-          setRoute("entry");
+          setRoute("unlock");
         }
 
         return (
@@ -1526,6 +1545,7 @@
                   wishHistory={wishHistory}
                   onBack={() => setRoute("entry")}
                   onPickTask={handlePickTask}
+                  onSeeWish={handleSeeWish}
                 />
               )}
 
