@@ -402,7 +402,7 @@
         },
       };
 
-      const WISH_PRESETS = ["A new iPhone", "Solo trip to Goa", "MacBook Air", "Save ₹50,000"];
+      const WISH_PRESETS = ["A new iPhone", "Solo trip to Goa", "Nike Air Jordan", "Save ₹50,000"];
 
       /* ---------- WISH WALL — FULL TERMS & CONDITIONS (legal draft; to be finalised with Legal + product) ---------- */
       const WISH_TERMS_UPDATED = "15 June 2026";
@@ -1123,6 +1123,7 @@
         const TASK_COUNT = PRODUCTS.length;
         const activityDone = PRODUCTS.filter((p) => taskDone(p.id, activeTasks)).length;
         const thisWishComplete = wishComplete(activeWish);
+        const [rulesOpen, setRulesOpen] = useState(false);
 
         // Carousel data: every wish, with the active one highlighted.
         const carousel = useMemo(
@@ -1132,7 +1133,7 @@
 
         return (
           <div className="relative min-h-dvh flex flex-col bg-bg animate-slide">
-            <TopBar title="Chances to Win" onBack={onBack} />
+            <TopBar title="Complete tasks to win" onBack={onBack} />
 
             <div className="flex-1 flex flex-col pb-8 no-scrollbar">
               {/* Wish carousel — all wishes, active one highlighted; tap to switch */}
@@ -1151,9 +1152,6 @@
                         <span className="text-[18px] text-ink-soft font-extrabold">%</span>
                       </div>
                     </div>
-                    <div className="text-right text-[11px] text-ink-soft font-semibold">
-                      {activityDone}/{TASK_COUNT} activities done
-                    </div>
                   </div>
                   <div className="mt-3 h-2 rounded-full bg-line overflow-hidden">
                     <div
@@ -1168,8 +1166,8 @@
                       </>
                     ) : (
                       <>
-                        Finish all {TASK_COUNT} activities to lock in your wish and{" "}
-                        <span className="text-hl font-bold">enter the draw</span>.
+                        Every eligible activity boosts your chances in the{" "}
+                        <span className="text-hl font-bold">wish fulfilment draw</span>.
                       </>
                     )}
                   </p>
@@ -1183,14 +1181,14 @@
                     Ways to Move <span className="text-hl">Closer to Your Wish</span>
                   </h2>
                   <p className="mt-1 text-[13px] text-ink-soft leading-snug">
-                    Finish all {TASK_COUNT} activities to complete your wish — <span className="text-hl font-semibold">that's your entry into the draw.</span>
+                    Complete more activities to <span className="text-hl font-semibold">increase your odds.</span>
                   </p>
                 </div>
 
                 {/* This-wish activity progress */}
                 <div className="mb-4 mt-3 flex items-center gap-2 text-[11px] font-semibold text-ink-mute uppercase tracking-[0.1em]">
                   <Icon name={thisWishComplete ? "check" : "sparkle"} className="w-3.5 h-3.5" stroke={thisWishComplete ? "#7CE3A8" : "#F4CC60"} />
-                  This wish · {activityDone}/{TASK_COUNT} activities done
+                  Your tasks
                 </div>
 
                 {/* 3 activity choices for the active wish */}
@@ -1205,8 +1203,19 @@
                   ))}
                 </div>
 
+                {/* Compliance — how-it-works + T&Cs (present on every page) */}
+                <button
+                  type="button"
+                  onClick={() => setRulesOpen(true)}
+                  className="mt-7 w-full text-center text-[11px] text-ink-mute hover:text-hl underline underline-offset-2 decoration-ink-mute/40 hover:decoration-hl/60 transition"
+                >
+                  How it works · Terms &amp; conditions
+                </button>
+
               </div>
             </div>
+
+            <DrawRulesSheet open={rulesOpen} onClose={() => setRulesOpen(false)} />
 
           </div>
         );
@@ -1267,15 +1276,17 @@
                     <Icon name="star4" className="sparkle-deco w-2.5 h-2.5 animate-twinkle" stroke="#FBE38C"
                       style={{ bottom: 22, right: 60, animationDelay: `${i * 200 + 400}ms` }} />
 
-                    {/* Right ornament — completed check, or padlock while in progress */}
-                    <div className="absolute top-1/2 -translate-y-1/2 right-5 flex flex-col items-center gap-1.5">
-                      <div className="h-12 w-12 rounded-2xl bg-hl text-brand-darker grid place-items-center shadow-gold">
-                        <Icon name={isComplete ? "check" : "lock"} className="w-5 h-5" stroke="#2C0F5C" />
+                    {/* Right ornament — completion check only (no padlock while in progress) */}
+                    {isComplete && (
+                      <div className="absolute top-1/2 -translate-y-1/2 right-5 flex flex-col items-center gap-1.5">
+                        <div className="h-12 w-12 rounded-2xl bg-hl text-brand-darker grid place-items-center shadow-gold">
+                          <Icon name="check" className="w-5 h-5" stroke="#2C0F5C" />
+                        </div>
+                        <span className="text-[9px] uppercase tracking-[0.14em] font-extrabold text-hl">
+                          DONE
+                        </span>
                       </div>
-                      <span className="text-[9px] uppercase tracking-[0.14em] font-extrabold text-hl">
-                        {isComplete ? "DONE" : "LOCKED"}
-                      </span>
-                    </div>
+                    )}
 
                     <div className="text-[10px] uppercase tracking-[0.22em] text-hl font-bold flex items-center gap-2 pr-20">
                       <Icon name="sparkle" className="w-3.5 h-3.5" stroke="#F4CC60" />
