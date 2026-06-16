@@ -302,19 +302,23 @@
          Each wish carries its own copy of these activities. Tapping one
          redirects to that product's existing in-app flow (not built here).
          A wish is complete only when ALL of its activities are done. */
-      const UPI_TARGET = 3; // UPI requires 3 successful transactions to complete
+      // UPI is a daily challenge: 3 payments = 1 day, up to 30 days (90 payments).
+      const UPI_PER_DAY = 3;
+      const UPI_MAX_DAYS = 30;
+      const UPI_MAX_PAYMENTS = UPI_PER_DAY * UPI_MAX_DAYS; // 90
 
       const PRODUCTS = [
         {
           id: "upi",
-          name: "Pay with UPI",
+          name: "Daily UPI Challenge",
           short: "UPI",
-          tagline: "Complete 3 successful UPI transactions",
+          tagline: "Complete 3 UPI payments today to move closer to win",
           icon: "spark",
           journeyTitle: "UPI payment",
           imgWebp: "task_upi.webp",
           imgJpg: "task_upi.jpg",
-          target: UPI_TARGET, // tap 3× to finish
+          target: UPI_PER_DAY, // 3 payments = today's goal (1 day); 30 days max
+          points: 50, // up to 50% of the Wish Journey Score, earned over 30 days
         },
         {
           id: "card",
@@ -326,6 +330,7 @@
           imgWebp: "task_card.webp",
           imgJpg: "task_card.jpg",
           supportsInProgress: true,
+          points: 25, // +25% when the Level Up Card is applied
         },
         {
           id: "refer",
@@ -337,33 +342,60 @@
           imgWebp: "task_refer.webp",
           imgJpg: "task_refer.jpg",
           supportsInProgress: true,
+          points: 15, // +15% when a referral is completed
         },
       ];
 
       /* ---------- WISH MODEL ----------
-         One wish per user. Progress fills as the wish's activities complete
-         (0/3 → 100%). The wish tracks its own activities:
-           upi  — a 0..UPI_TARGET counter
-           card / refer — "idle" | "in-progress" | "success" */
+         One wish per user. The Wish Journey Score starts at 9% and grows as
+         activities complete:
+           upi   — 0..UPI_MAX_PAYMENTS counter (3 payments = 1 day, up to 30 days → +50%)
+           card  — "idle" | "in-progress" | "success" (+25% when applied)
+           refer — "idle" | "in-progress" | "success" (+15% when completed)
+         A wish is "entered in the draw" once Card AND Referral are done. */
       const MAX_WISHES = 1; // single-wish campaign — one wish per user
-      const PCT_PER_ACTIVITY = 30; // each completed activity fills 30% of the bar — 3 done → 90% (never 100%)
+
+      // Wish Journey Score weights — 9 + 25 + 15 + 50 = 99% max (intentionally never 100).
+      const START_SCORE = 9;
+      const CARD_POINTS = 25;
+      const REFER_POINTS = 15;
+      const UPI_POINTS = 50;
 
       const freshTasks = () => ({ upi: 0, card: "idle", refer: "idle" });
 
       // Normalised per-activity state for display/badges.
       function taskState(productId, tasks) {
         if (productId === "upi") {
-          return tasks.upi >= UPI_TARGET ? "success" : tasks.upi > 0 ? "in-progress" : "idle";
+          return tasks.upi >= UPI_MAX_PAYMENTS ? "success" : tasks.upi > 0 ? "in-progress" : "idle";
         }
         return tasks[productId] || "idle";
       }
       const taskDone = (productId, tasks) => taskState(productId, tasks) === "success";
-      const wishComplete = (w) => !!w && PRODUCTS.every((p) => taskDone(p.id, w.tasks));
+
+      // UPI daily-challenge derived values.
+      const upiDays = (tasks) => Math.floor((tasks.upi || 0) / UPI_PER_DAY);   // 0..30 completed days
+      const upiToday = (tasks) => (tasks.upi || 0) % UPI_PER_DAY;              // 0..2 payments toward today
+      const upiScore = (tasks) =>
+        (Math.min(tasks.upi || 0, UPI_MAX_PAYMENTS) / UPI_MAX_PAYMENTS) * UPI_POINTS;
+
+      // Wish Journey Score = 9 + (card?25) + (refer?15) + (UPI days/30)×49, rounded. Max 98.
+      const wishScore = (w) =>
+        !w
+          ? START_SCORE
+          : Math.round(
+              START_SCORE +
+                (taskDone("card", w.tasks) ? CARD_POINTS : 0) +
+                (taskDone("refer", w.tasks) ? REFER_POINTS : 0) +
+                upiScore(w.tasks)
+            );
+
+      // "Entered in the draw" = the two one-time milestones are done (UPI keeps boosting the score after).
+      const wishComplete = (w) => !!w && taskDone("card", w.tasks) && taskDone("refer", w.tasks);
 
       // Advance one activity after its (simulated) redirect returns.
       function advanceTask(tasks, productId) {
         if (productId === "upi") {
-          return { ...tasks, upi: Math.min(tasks.upi + 1, UPI_TARGET) };
+          return { ...tasks, upi: Math.min(tasks.upi + 1, UPI_MAX_PAYMENTS) };
         }
         const cur = tasks[productId];
         const product = PRODUCTS.find((p) => p.id === productId);
@@ -405,11 +437,14 @@
       const WISH_PRESETS = ["A new iPhone", "Solo trip to Goa", "Nike Air Jordan", "Save ₹50,000"];
 
       /* ---------- WISH WALL — FULL TERMS & CONDITIONS (legal draft; to be finalised with Legal + product) ---------- */
-      const WISH_TERMS_UPDATED = "15 June 2026";
+      const WISH_TERMS_UPDATED = "16 June 2026";
       const WISH_TERMS = [
         {
           h: "1. Overview",
-          p: ["The SalarySe Wish Wall is an engagement campaign that allows eligible users to submit a personal wish and participate in a draw for wish fulfilment by completing qualifying SalarySe activities. Participation in the campaign is subject to these Terms & Conditions."],
+          p: [
+            "The SalarySe Wish Wall is an engagement campaign that allows eligible users to submit a personal wish and participate in a draw for wish fulfillment by completing qualifying SalarySe activities.",
+            "Participation in the campaign is subject to these Terms & Conditions.",
+          ],
         },
         {
           h: "2. Eligibility",
@@ -417,7 +452,7 @@
           ul: [
             "Be 18 years of age or older.",
             "Have an active SalarySe account.",
-            "Be part of an organisation where the Wish Wall campaign is being conducted.",
+            "Be part of an organization where the Wish Wall campaign is being conducted.",
             "Complete at least one qualifying SalarySe activity during the campaign period.",
           ],
           after: ["SalarySe reserves the right to verify participant eligibility at any stage of the campaign."],
@@ -425,13 +460,14 @@
         {
           h: "3. How to Participate",
           p: [
+            "To participate in the Wish Wall campaign:",
             "Step 1 — Submit a wish through the Wish Wall feature available within the SalarySe application.",
             "Step 2 — Complete at least one qualifying activity, including but not limited to:",
           ],
           ul: [
-            "UPI transaction",
-            "Level Up Card application",
-            "Successful referral",
+            "UPI Transaction",
+            "Level Up Card Application",
+            "Successful Referral",
             "Any other activity communicated by SalarySe during the campaign period",
           ],
           after: ["Only users who complete a qualifying activity will be considered eligible for winner selection."],
@@ -445,7 +481,10 @@
         },
         {
           h: "5. Wish Submission Guidelines",
-          p: ["Participants are encouraged to submit genuine wishes aligned with their personal goals and aspirations. SalarySe reserves the right to reject, remove, or disqualify wishes that:"],
+          p: [
+            "Participants are encouraged to submit genuine wishes aligned with their personal goals and aspirations.",
+            "SalarySe reserves the right to reject, remove, or disqualify wishes that:",
+          ],
           ul: [
             "Contain offensive, inappropriate, or unlawful content.",
             "Violate intellectual property rights.",
@@ -456,12 +495,13 @@
         {
           h: "6. Winner Selection",
           p: [
-            "One winner will be selected by random draw from all eligible entries on 18 June, 6:00 PM IST.",
-            "Winners are selected from eligible participants at SalarySe's discretion in accordance with campaign rules. Completion of a qualifying activity does not guarantee selection as a winner. SalarySe's decision regarding winner selection shall be final and binding.",
+            "Winners will be selected from eligible participants at SalarySe's sole discretion in accordance with campaign rules.",
+            "Completion of a qualifying activity does not guarantee selection as a winner.",
+            "SalarySe's decision regarding winner selection shall be final and binding.",
           ],
         },
         {
-          h: "7. Reward Fulfilment",
+          h: "7. Reward Fulfillment",
           p: ["Selected winners may be required to:"],
           ul: [
             "Verify their identity.",
@@ -469,8 +509,8 @@
             "Comply with any additional verification requirements requested by SalarySe.",
           ],
           after: [
-            "The prize is selected during the two-day carnival. Prize value is capped at the wish amount or ₹50,000, whichever is lower, at SalarySe's discretion. A cash equivalent may be substituted.",
-            "SalarySe reserves the right to determine the manner, value, and method of wish fulfilment, and may provide an equivalent alternative reward of comparable value.",
+            "SalarySe reserves the right to determine the manner, value, and method of wish fulfillment.",
+            "Where required, SalarySe may provide an equivalent alternative reward of comparable value.",
             "Rewards are non-transferable and cannot be exchanged for cash unless explicitly approved by SalarySe.",
           ],
         },
@@ -486,7 +526,10 @@
         },
         {
           h: "9. Publicity & Communication",
-          p: ["By participating in the campaign, winners may be requested to participate in reasonable promotional activities related to the campaign. SalarySe may publish winner names, photographs, wish stories, testimonials, or campaign experiences across its communication channels, subject to applicable laws and required consent."],
+          p: [
+            "By participating in the campaign, winners may be requested to participate in reasonable promotional activities related to the campaign.",
+            "SalarySe may publish winner names, photographs, wish stories, testimonials, or campaign experiences across its communication channels, subject to applicable laws and required consent.",
+          ],
         },
         {
           h: "10. Changes to the Campaign",
@@ -503,11 +546,15 @@
         },
         {
           h: "12. Final Decision",
-          p: ["All decisions made by SalarySe relating to eligibility, participation, winner selection, verification, and reward fulfilment shall be final."],
+          p: ["All decisions made by SalarySe relating to eligibility, participation, winner selection, verification, and reward fulfillment shall be final."],
         },
         {
           h: "13. Contact Us",
-          p: ['For questions regarding the Wish Wall campaign, contact support@salaryse.com with the subject line "Wish Wall Support".'],
+          p: [
+            "For questions regarding the Wish Wall campaign, please contact:",
+            "support@salaryse.com",
+            'Subject Line: "Wish Wall Support"',
+          ],
         },
       ];
 
@@ -1033,8 +1080,8 @@
                     <div className="flex-1 min-w-0">
                       <div className="text-[16px] font-extrabold text-ink break-words">"{h.text}"</div>
                       <div className="mt-1 flex items-center gap-2">
-                        <span className="sticker">+{PCT_PER_ACTIVITY}%</span>
-                        <span className="text-[10px] text-ink-mute font-semibold uppercase tracking-wider">All activities done</span>
+                        <span className="sticker">{h.score}%</span>
+                        <span className="text-[10px] text-ink-mute font-semibold uppercase tracking-wider">Wish Journey Score · entered in draw</span>
                       </div>
                     </div>
                   </div>
@@ -1049,8 +1096,8 @@
       function DrawRulesSheet({ open, onClose }) {
         if (!open) return null;
         return (
-          <div className="absolute inset-0 z-50 flex items-end animate-slide" style={{ background: "rgba(5,2,20,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
-            <div className="w-full max-h-[80%] rounded-t-[28px] bg-bg border-t border-line flex flex-col relative">
+          <div className="fixed inset-0 z-50 flex items-end justify-center animate-slide" style={{ background: "rgba(5,2,20,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
+            <div className="w-full max-w-[460px] max-h-[85dvh] rounded-t-[28px] bg-bg border-t border-line flex flex-col relative">
               {/* Pinned header — stays put while the body scrolls */}
               <div className="shrink-0 px-5 pt-3 pb-3 border-b border-line/60">
                 <div className="mx-auto w-12 h-1 rounded-full bg-line mb-3" />
@@ -1069,8 +1116,8 @@
               <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-5 pt-4 pb-7">
               <ol className="space-y-3 text-[13px] text-ink-soft leading-relaxed">
                 <li><span className="font-extrabold text-ink">1. Make a wish</span> aligned with a SalarySe financial goal.</li>
-                <li><span className="font-extrabold text-ink">2. Complete its activities</span> — 3 successful UPI transactions, get your Level Up Card, and invite a friend — to finish that wish.</li>
-                <li><span className="font-extrabold text-ink">3. Finishing your wish</span> counts as your qualifying entry. <span className="text-hl font-semibold">One winner is picked by random draw</span> from all eligible entries on <span className="text-ink font-semibold">18 June, 6:00 PM IST</span>. You'll be notified in-app.</li>
+                <li><span className="font-extrabold text-ink">2. Boost your Wish Journey Score</span> — make daily UPI payments (3 a day, up to 30 days), get your Level Up Card, and invite a friend.</li>
+                <li><span className="font-extrabold text-ink">3. Get your Level Up Card and refer a friend</span> to enter the draw. <span className="text-hl font-semibold">One winner is picked by random draw</span> from all eligible entries on <span className="text-ink font-semibold">18 June, 6:00 PM IST</span>. You'll be notified in-app.</li>
               </ol>
 
               {/* Draw & prize — corrected mechanic */}
@@ -1117,7 +1164,7 @@
       }
 
       /* ---------- UNLOCK TASKS (Screen 2) ---------- */
-      function UnlockTasksScreen({ wishes, activeIdx, completedCount, progressPct, onBack, onPickTask, onSeeWish, canMakeMore, onMakeAnother, onSelectWish }) {
+      function UnlockTasksScreen({ wishes, activeIdx, completedCount, progressPct, onBack, onPickTask, canMakeMore, onMakeAnother, onSelectWish }) {
         const activeWish = wishes[activeIdx] || { text: "", tasks: freshTasks() };
         const activeTasks = activeWish.tasks;
         const TASK_COUNT = PRODUCTS.length;
@@ -1276,24 +1323,12 @@
                     <Icon name="star4" className="sparkle-deco w-2.5 h-2.5 animate-twinkle" stroke="#FBE38C"
                       style={{ bottom: 22, right: 60, animationDelay: `${i * 200 + 400}ms` }} />
 
-                    {/* Right ornament — completion check only (no padlock while in progress) */}
-                    {isComplete && (
-                      <div className="absolute top-1/2 -translate-y-1/2 right-5 flex flex-col items-center gap-1.5">
-                        <div className="h-12 w-12 rounded-2xl bg-hl text-brand-darker grid place-items-center shadow-gold">
-                          <Icon name="check" className="w-5 h-5" stroke="#2C0F5C" />
-                        </div>
-                        <span className="text-[9px] uppercase tracking-[0.14em] font-extrabold text-hl">
-                          DONE
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="text-[10px] uppercase tracking-[0.22em] text-hl font-bold flex items-center gap-2 pr-20">
+                    <div className="text-[10px] uppercase tracking-[0.22em] text-hl font-bold flex items-center gap-2 pr-10">
                       <Icon name="sparkle" className="w-3.5 h-3.5" stroke="#F4CC60" />
                       My wish
                     </div>
 
-                    <div className="mt-3 text-[24px] leading-[1.18] font-extrabold text-white break-words line-clamp-2 min-h-[58px] pr-20">
+                    <div className="mt-3 text-[24px] leading-[1.18] font-extrabold text-white break-words line-clamp-2 min-h-[58px] pr-10">
                       "{it.text}"
                     </div>
 
@@ -1337,7 +1372,8 @@
         const isFailed = state === "failed";
         const isInProgress = state === "in-progress";
         const isUpi = p.id === "upi";
-        const upiCount = isUpi ? tasks.upi : 0;
+        const upiDayCount = isUpi ? upiDays(tasks) : 0;     // completed days (0..30)
+        const upiTodayCount = isUpi ? upiToday(tasks) : 0;  // payments toward today (0..2)
 
         const ringAccent =
           state === "success" ? "ring-2 ring-[rgba(124,227,168,0.5)] shadow-[0_0_24px_rgba(124,227,168,0.18)]" :
@@ -1351,9 +1387,9 @@
           state === "failed" ? "Try again" : "Continue";
 
         const statusDetail = isLocked
-          ? (isUpi ? `${p.target}/${p.target} UPI transactions · completed` : "Activity completed")
+          ? (isUpi ? `${UPI_MAX_DAYS}/${UPI_MAX_DAYS} days · challenge complete` : "Activity completed")
           : isInProgress
-          ? (isUpi ? `${upiCount}/${p.target} UPI transactions done`
+          ? (isUpi ? `${upiDayCount}/${UPI_MAX_DAYS} days · ${upiTodayCount}/${UPI_PER_DAY} payments today`
             : p.id === "card" ? "Application under review · ~24 hrs"
             : p.id === "refer" ? "Waiting for friend to sign up"
             : "In progress")
@@ -1372,7 +1408,7 @@
                 <StateBadge state={state} />
                 {isUpi && !isLocked && (
                   <span className="text-[10px] font-extrabold tabular-nums text-hl tracking-[0.08em]">
-                    {upiCount}/{p.target}
+                    {upiDayCount}/{UPI_MAX_DAYS} days
                   </span>
                 )}
               </div>
@@ -1437,7 +1473,7 @@
             {!isLocked && (
               <p className="text-[10px] text-ink-mute italic mx-1 mt-1" style={{ fontFamily: "Fraunces, serif" }}>
                 {isUpi
-                  ? "demo: tap to add a UPI transaction (3 needed)"
+                  ? "demo: tap = 1 UPI payment (3 payments = 1 day, up to 30 days)"
                   : isInProgress
                   ? "demo: tap again to simulate completion"
                   : "demo: tap to start"}
@@ -1479,186 +1515,6 @@
       }
 
       /* ---------- WISH JOURNEY — typography-led wow moment ---------- */
-      function UnlockScreen({ wish, progressPct = 0, completedCount = 0, thisWishComplete = false, canMakeMore = false, onMakeAnother, onHome }) {
-        const [run, setRun] = useState(true);
-        const [rulesOpen, setRulesOpen] = useState(false);
-        const allDone = completedCount >= MAX_WISHES; // 3 wishes → 99%, the max
-        useEffect(() => { const t = setTimeout(() => setRun(false), 2800); return () => clearTimeout(t); }, []);
-
-        // Dense magical sparkle field
-        const sparkles = useMemo(
-          () => Array.from({ length: 38 }).map((_, i) => ({
-            top: Math.random() * 95,
-            left: Math.random() * 96,
-            size: 2 + Math.random() * 14,
-            delay: Math.random() * 2400,
-            color: i % 5 === 0 ? "#FFFFFF" : i % 3 === 0 ? "#FBE38C" : "#F4CC60",
-            kind: i % 7 === 0 ? "sparkle" : "star4",
-          })),
-          []
-        );
-
-        return (
-          <div className="relative min-h-dvh flex flex-col bg-bg animate-slide overflow-hidden">
-            {/* Magical atmospheric backdrop — multi-layer aura */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(closest-side at 50% 22%, rgba(244,204,96,0.34), transparent 55%)," +
-                  "radial-gradient(closest-side at 50% 28%, rgba(255,246,212,0.10), transparent 30%)," +
-                  "radial-gradient(closest-side at 88% 50%, rgba(155,111,227,0.42), transparent 60%)," +
-                  "radial-gradient(closest-side at 12% 70%, rgba(120,73,201,0.42), transparent 60%)",
-              }}
-            />
-
-            {/* Twin vertical light shafts flanking the wish */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div
-                className="absolute top-[18%] w-[3px] h-[55%]"
-                style={{
-                  left: "26%",
-                  background: "linear-gradient(180deg, transparent 0%, rgba(244,204,96,0.35) 30%, rgba(244,204,96,0.18) 70%, transparent 100%)",
-                  filter: "blur(6px)",
-                }}
-              />
-              <div
-                className="absolute top-[18%] w-[3px] h-[55%]"
-                style={{
-                  right: "26%",
-                  background: "linear-gradient(180deg, transparent 0%, rgba(244,204,96,0.35) 30%, rgba(244,204,96,0.18) 70%, transparent 100%)",
-                  filter: "blur(6px)",
-                }}
-              />
-            </div>
-
-            {/* Sparkle field */}
-            <div className="absolute inset-0 pointer-events-none">
-              {sparkles.map((s, i) => (
-                <Icon
-                  key={i} name={s.kind}
-                  className="sparkle-deco animate-twinkle"
-                  stroke={s.color}
-                  style={{
-                    top: `${s.top}%`, left: `${s.left}%`,
-                    width: s.size, height: s.size,
-                    animationDelay: `${s.delay}ms`,
-                  }}
-                />
-              ))}
-            </div>
-
-            <TopBar title="" />
-            <Confetti run={run} />
-
-            <div className="relative flex-1 px-6 pb-8 flex flex-col items-center text-center">
-              {/* Status pill — reflects this wish + overall journey */}
-              <div className="mt-1 animate-pop">
-                <div className="inline-flex items-center gap-2 bg-hl text-brand-darker rounded-full px-4 py-2 shadow-gold">
-                  <Icon name={thisWishComplete || allDone ? "check" : "sparkle"} className="w-4 h-4" />
-                  <span className="text-[12px] font-extrabold tracking-[0.2em] uppercase">
-                    {thisWishComplete ? "Wish Complete" : "Wish received"}
-                  </span>
-                </div>
-              </div>
-
-              {/* HERO group — wish-as-hero, minimal copy */}
-              <div className="mt-auto pt-5 w-full flex flex-col items-center">
-                {/* Top ornament */}
-                <div className="flex items-center gap-3 w-full max-w-[240px] animate-pop" style={{ animationDelay: "120ms" }}>
-                  <span className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(244,204,96,0.5), transparent)" }} />
-                  <Icon name="sparkle" className="w-3 h-3 shrink-0" stroke="#F4CC60" />
-                  <span className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(244,204,96,0.5), transparent)" }} />
-                </div>
-
-                {/* THE WISH — biggest typographic moment */}
-                <h1
-                  className="mt-5 text-[40px] leading-[1.06] tracking-[-0.012em] display-italic px-1 break-words animate-pop"
-                  style={{
-                    animationDelay: "180ms",
-                    color: "#FFFFFF",
-                    textShadow: "0 0 32px rgba(244,204,96,0.6), 0 0 64px rgba(244,204,96,0.26)",
-                  }}
-                >
-                  &ldquo;{wish}&rdquo;
-                </h1>
-
-                {/* Bottom ornament */}
-                <div className="mt-5 flex items-center gap-3 w-full max-w-[240px] animate-pop" style={{ animationDelay: "240ms" }}>
-                  <span className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(244,204,96,0.5), transparent)" }} />
-                  <Icon name="sparkle" className="w-3 h-3 shrink-0" stroke="#F4CC60" />
-                  <span className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(244,204,96,0.5), transparent)" }} />
-                </div>
-
-                {/* Credit block — Wish Journey participation from completed activities */}
-                <div className="mt-7 flex flex-col items-center animate-pop" style={{ animationDelay: "320ms" }}>
-                  <div className="text-[10px] uppercase tracking-[0.42em] font-bold text-hl">
-                    chances to win
-                  </div>
-                  <div
-                    className="mt-1 font-black text-ink leading-none"
-                    style={{ textShadow: "0 0 22px rgba(244,204,96,0.45)" }}
-                  >
-                    <span className="text-[52px]">{progressPct}</span>
-                    <span className="text-[26px] text-ink-soft font-extrabold">%</span>
-                  </div>
-                  <p
-                    className="mt-1.5 text-[15px] leading-[1.3]"
-                    style={{
-                      fontFamily: "Fraunces, serif",
-                      fontStyle: "italic",
-                      fontWeight: 500,
-                      color: "#F4CC60",
-                    }}
-                  >
-                    {thisWishComplete ? "wish complete" : "in progress"}
-                  </p>
-                </div>
-
-                {/* Reassurance — completion state or nudge */}
-                <p
-                  className="mt-6 text-center text-[12.5px] text-ink-soft leading-snug max-w-[280px] animate-pop"
-                  style={{ animationDelay: "420ms" }}
-                >
-                  {thisWishComplete ? (
-                    <>
-                      Thank you for participating.{" "}
-                      <span className="text-hl font-semibold">Your wish is now entered into the draw.</span> Keep an eye on your app for results.
-                    </>
-                  ) : (
-                    <>
-                      Finish your wish's activities to{" "}
-                      <span className="text-hl font-semibold">lock in your entry</span>.
-                    </>
-                  )}
-                </p>
-              </div>
-
-              {/* CTAs — pinned to bottom */}
-              <div className="mt-auto pt-8 w-full space-y-2">
-                <button
-                  onClick={onHome}
-                  className="w-full h-[58px] rounded-2xl bg-hl text-brand-darker font-extrabold text-[16px] shadow-gold active:translate-y-0.5 active:scale-[0.99] hover:brightness-110 transition flex items-center justify-center gap-2"
-                  style={{ boxShadow: "0 0 0 1px rgba(255,246,212,0.4) inset, 0 8px 28px rgba(244,204,96,0.32)" }}
-                >
-                  Back to my <span className="display-italic text-brand-darker text-[20px]">activities</span>
-                  <Icon name="arrow" className="w-5 h-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRulesOpen(true)}
-                  className="mt-1 w-full text-center text-[11px] text-ink-mute hover:text-hl underline underline-offset-2 decoration-ink-mute/40 hover:decoration-hl/60 transition"
-                >
-                  How it works · Terms &amp; conditions
-                </button>
-              </div>
-            </div>
-
-            <DrawRulesSheet open={rulesOpen} onClose={() => setRulesOpen(false)} />
-          </div>
-        );
-      }
-
       /* ---------- PERSISTENCE ----------
          Wish Wall stays active post-event: all wishes + their activity progress
          are saved to localStorage so they survive refreshes and return visits. */
@@ -1697,11 +1553,10 @@
 
         const completedCount = useMemo(() => wishes.filter(wishComplete).length, [wishes]);
         const activeWish = wishes[activeIdx] || null;
-        const thisWishComplete = wishComplete(activeWish);
-        // Single-wish campaign: progress reflects how many of this wish's activities are done (0/3 → 100%).
+        // Activities fully "done" (UPI only counts at 30 days) — used for light messaging.
         const activityDone = activeWish ? PRODUCTS.filter((p) => taskDone(p.id, activeWish.tasks)).length : 0;
-        // Each completed activity fills 30% of the bar; all 3 done → 90% (never 100%).
-        const progressPct = activityDone * PCT_PER_ACTIVITY;
+        // Wish Journey Score: starts at 9%, max 99% (9 + card 25 + refer 15 + UPI up to 50).
+        const progressPct = wishScore(activeWish);
         const canMakeMore = false; // one wish per user — no additional wishes
 
         const redirectingProduct = useMemo(
@@ -1739,22 +1594,10 @@
           const after = advanceTask(activeWish.tasks, id);
           const updatedWish = { ...activeWish, tasks: after };
           setWishes(wishes.map((w, i) => (i === activeIdx ? updatedWish : w)));
-          if (wishComplete(updatedWish) && !wishComplete(activeWish)) {
-            setRoute("granted");
-          }
-        }
-
-        // View the active wish + overall journey on demand.
-        function handleSeeWish() {
-          setRoute("granted");
-        }
-
-        function handleBackToActivities() {
-          setRoute("unlock");
         }
 
         const completedWishes = useMemo(
-          () => wishes.filter(wishComplete).map((w) => ({ text: w.text })),
+          () => wishes.filter(wishComplete).map((w) => ({ text: w.text, score: wishScore(w) })),
           [wishes]
         );
 
@@ -1780,21 +1623,8 @@
                   progressPct={progressPct}
                   canMakeMore={canMakeMore}
                   onPickTask={handlePickTask}
-                  onSeeWish={handleSeeWish}
                   onMakeAnother={handleMakeAnother}
                   onSelectWish={(i) => setActiveIdx(i)}
-                />
-              )}
-
-              {route === "granted" && activeWish && (
-                <UnlockScreen
-                  wish={activeWish.text}
-                  progressPct={progressPct}
-                  completedCount={completedCount}
-                  thisWishComplete={thisWishComplete}
-                  canMakeMore={canMakeMore}
-                  onMakeAnother={handleMakeAnother}
-                  onHome={handleBackToActivities}
                 />
               )}
 
